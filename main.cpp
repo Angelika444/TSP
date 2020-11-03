@@ -42,7 +42,7 @@ int extractIntegerWords(string str)
         /* To save from space at the end of string */
         temp = "";
     }
-    return found;generateFirstSolution
+    return found;
 }
 
 float calcDistance(point p1, point p2)
@@ -55,7 +55,7 @@ float calcDistance(point p1, point p2)
 void generateFirstSolution(point tab[], int dim, int solution[])
 {
     //solution is a permutation with cities index in tab, not field index in struct, so from 0 to dim-1
-    int i, j, solution_index = rand() % dim, index_min_dinstance, min_distance, current_distance;
+    int i, j, solution_index = rand() % dim, index_min_dinstance, min_distance, current_distance, sum_distance = 0;
     solution[0] = solution_index;
     vector <int> not_visited;
     for (i = 0; i < dim; i++)
@@ -77,7 +77,10 @@ void generateFirstSolution(point tab[], int dim, int solution[])
         }
         solution[i] = not_visited[index_min_dinstance];
         not_visited.erase(not_visited.begin() + index_min_dinstance);
+        sum_distance += min_distance;
     }
+    sum_distance += calcDistance(tab[solution[0]], tab[solution[dim - 1]]);
+    cout << "distance: " << sum_distance <<endl;
 }
 
 int main()
