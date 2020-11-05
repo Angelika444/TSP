@@ -45,14 +45,35 @@ int extractIntegerWords(string str)
     return found;
 }
 
-float calcDistance(point p1, point p2)
+
+double getDistance(int i, int j, double** distanceMatrix)
+{
+    return distanceMatrix[i][j];
+}
+
+double calcDistance(point p1, point p2)
 {
     //dystans euklidesowy (sa tez inne)
     double x1 = p1.x - p2.x, x2 = p1.y - p2.y;
     return sqrt(x1 * x1 + x2 * x2);
 }
 
-void generateFirstSolution(point tab[], int dim, int solution[])
+
+int** createDistanceMatrix(int dim, double** matrix, point tab[])
+{
+    for(int i = 0; i<dim-1; i++)
+    {
+        matrix[i][i] = 0;
+        for(int j = i+1; j<dim; j++)
+        {
+            matrix[i][j] = calcDistance(tab[i], tab[j]);
+            matrix[j][i] = matrix[i][j];
+        }
+    }
+}
+
+
+void generateFirstSolution(point tab[], int dim, int solution[], double** distanceMatrix)
 {
     //solution is a permutation with cities index in tab, not field index in struct, so from 0 to dim-1
     int i, j, solution_index = rand() % dim, index_min_dinstance, min_distance, current_distance, sum_distance = 0;
@@ -66,10 +87,12 @@ void generateFirstSolution(point tab[], int dim, int solution[])
     for (i = 1; i < dim ; i++)
     {
         index_min_dinstance = 0;
-        min_distance = calcDistance(tab[solution_index], tab[not_visited[index_min_dinstance]]);
+        //min_distance = calcDistance(tab[solution_index], tab[not_visited[index_min_dinstance]]);
+        min_distance = getDistance(solution_index, not_visited[index_min_dinstance], distanceMatrix);
         for (j = 1; j < not_visited.size(); j++)
         {
-            current_distance = calcDistance(tab[solution_index], tab[not_visited[j]]);
+            //current_distance = calcDistance(tab[solution_index], tab[not_visited[j]]);
+            current_distance = getDistance(solution_index, not_visited[j], distanceMatrix);
             if (current_distance < min_distance) {
                 min_distance = current_distance;
                 index_min_dinstance = j;
@@ -79,12 +102,13 @@ void generateFirstSolution(point tab[], int dim, int solution[])
         not_visited.erase(not_visited.begin() + index_min_dinstance);
         sum_distance += min_distance;
     }
-    sum_distance += calcDistance(tab[solution[0]], tab[solution[dim - 1]]);
+    // sum_distance += calcDistance(tab[solution[0]], tab[solution[dim - 1]]);
+    sum_distance += getDistance(solution[0], solution[dim-1], distanceMatrix);
     cout << "distance: " << sum_distance <<endl;
 }
 
 
-void greedySwap(point tab[], int dim, int solution[])
+void greedySwap(point tab[], int dim, int solution[], double** distanceMatrix)
 {
     //greedy
     bool swaped = false;
@@ -101,21 +125,21 @@ void greedySwap(point tab[], int dim, int solution[])
             //sprawdzamy przy tym czy nie trafilismy na skrajne wartosci i=0, j=dim-1
 
             if (i != 0){
-                    sol_diff -= calcDistance(tab[solution[i-1]], tab[solution[i]]);
-                    sol_diff += calcDistance(tab[solution[i-1]], tab[solution[j]]);
+                    sol_diff -= getDistance(solution[i-1], solution[i], distanceMatrix);
+                    sol_diff += getDistance(solution[i-1], solution[j], distanceMatrix);
             }
             else {
-                    sol_diff -= calcDistance(tab[solution[dim-1]], tab[solution[i]]);
-                    sol_diff += calcDistance(tab[solution[dim-1]], tab[solution[j]]);
+                    sol_diff -= getDistance(solution[dim-1], solution[i], distanceMatrix);
+                    sol_diff += getDistance(solution[dim-1], solution[j], distanceMatrix);
             }
 
             if (j != dim-1){
-                    sol_diff -= calcDistance(tab[solution[j]], tab[solution[j+1]]);
-                    sol_diff += calcDistance(tab[solution[i]], tab[solution[j+1]]);
+                    sol_diff -= getDistance(solution[j], solution[j+1], distanceMatrix);
+                    sol_diff += getDistance(solution[i], solution[j+1], distanceMatrix);
             }
             else {
-                    sol_diff -= calcDistance(tab[solution[j]], tab[solution[0]]);
-                    sol_diff += calcDistance(tab[solution[i]], tab[solution[0]]);
+                    sol_diff -= getDistance(solution[j], solution[0], distanceMatrix);
+                    sol_diff += getDistance(solution[i], solution[0], distanceMatrix);
             }
 
 
@@ -139,7 +163,7 @@ void greedySwap(point tab[], int dim, int solution[])
 }
 
 
-void steepestSwap(point tab[], int dim, int solution[])
+void steepestSwap(point tab[], int dim, int solution[], double** distanceMatrix)
 {
     //steepest
     double best_diff = 0.0;
@@ -156,23 +180,22 @@ void steepestSwap(point tab[], int dim, int solution[])
             sol_diff = 0.0;
             //odwrocenie kolejnosci luku - odejmuemy 2 stare drogi i dodajemy 2 nowe drogi
             //sprawdzamy przy tym czy nie trafilismy na skrajne wartosci i=0, j=dim-1
-
             if (i != 0){
-                    sol_diff -= calcDistance(tab[solution[i-1]], tab[solution[i]]);
-                    sol_diff += calcDistance(tab[solution[i-1]], tab[solution[j]]);
+                    sol_diff -= getDistance(solution[i-1], solution[i], distanceMatrix);
+                    sol_diff += getDistance(solution[i-1], solution[j], distanceMatrix);
             }
             else {
-                    sol_diff -= calcDistance(tab[solution[dim-1]], tab[solution[i]]);
-                    sol_diff += calcDistance(tab[solution[dim-1]], tab[solution[j]]);
+                    sol_diff -= getDistance(solution[dim-1], solution[i], distanceMatrix);
+                    sol_diff += getDistance(solution[dim-1], solution[j], distanceMatrix);
             }
 
             if (j != dim-1){
-                    sol_diff -= calcDistance(tab[solution[j]], tab[solution[j+1]]);
-                    sol_diff += calcDistance(tab[solution[i]], tab[solution[j+1]]);
+                    sol_diff -= getDistance(solution[j], solution[j+1], distanceMatrix);
+                    sol_diff += getDistance(solution[i], solution[j+1], distanceMatrix);
             }
             else {
-                    sol_diff -= calcDistance(tab[solution[j]], tab[solution[0]]);
-                    sol_diff += calcDistance(tab[solution[i]], tab[solution[0]]);
+                    sol_diff -= getDistance(solution[j], solution[0], distanceMatrix);
+                    sol_diff += getDistance(solution[i], solution[0], distanceMatrix);
             }
             //cout<<sol_diff<<endl;
 
@@ -205,7 +228,7 @@ void steepestSwap(point tab[], int dim, int solution[])
     }
 }
 
-void randomWalkSwap(point tab[], int dim, int solution[])
+void randomWalkSwap(point tab[], int dim, int solution[], double** distanceMatrix)
 {
     //random walk
     double sol_diff = 0.0;
@@ -245,21 +268,21 @@ void randomWalkSwap(point tab[], int dim, int solution[])
         //sprawdzamy przy tym czy nie trafilismy na skrajne wartosci i=0, j=dim-1
 
         if (i != 0){
-                sol_diff -= calcDistance(tab[solution[i-1]], tab[solution[i]]);
-                sol_diff += calcDistance(tab[solution[i-1]], tab[solution[j]]);
+            sol_diff -= getDistance(solution[i-1], solution[i], distanceMatrix);
+            sol_diff += getDistance(solution[i-1], solution[j], distanceMatrix);
         }
         else {
-                sol_diff -= calcDistance(tab[solution[dim-1]], tab[solution[i]]);
-                sol_diff += calcDistance(tab[solution[dim-1]], tab[solution[j]]);
+            sol_diff -= getDistance(solution[dim-1], solution[i], distanceMatrix);
+            sol_diff += getDistance(solution[dim-1], solution[j], distanceMatrix);
         }
 
         if (j != dim-1){
-                sol_diff -= calcDistance(tab[solution[j]], tab[solution[j+1]]);
-                sol_diff += calcDistance(tab[solution[i]], tab[solution[j+1]]);
+            sol_diff -= getDistance(solution[j], solution[j+1], distanceMatrix);
+            sol_diff += getDistance(solution[i], solution[j+1], distanceMatrix);
         }
         else {
-                sol_diff -= calcDistance(tab[solution[j]], tab[solution[0]]);
-                sol_diff += calcDistance(tab[solution[i]], tab[solution[0]]);
+            sol_diff -= getDistance(solution[j], solution[0], distanceMatrix);
+            sol_diff += getDistance(solution[i], solution[0], distanceMatrix);
         }
         //cout<<sol_diff<<endl;
 
@@ -290,7 +313,10 @@ int main()
         permutation[i]=i;
     }
 
+
     string instances[9] = {"berlin52.tsp", "ch150.tsp", "eil76.tsp", "kroA100.tsp", "lin105.tsp", "pcb442.tsp", "pr1002.tsp", "rd100.tsp", "st70.tsp"};
+    //TODO
+    //pozniej zmienic k, bo na razie tylko berlin jest wczytywany
     for (int k = 0; k < 1; k++)
     {
         ifstream datafile;
@@ -324,7 +350,29 @@ int main()
         datafile.close();
 
         int solution[dim];
-        generateFirstSolution(tab, dim, solution);
+
+        double **distanceMatrix = new double*[dim];
+        for(int i = 0; i < dim; i++) {
+            distanceMatrix[i] = new double[dim];
+        }
+
+        createDistanceMatrix(dim, distanceMatrix, tab);
+
+        for(int i = 0; i<dim; i++)
+        {
+            for(int j = 0; j<dim; j++)
+            {
+                cout<<distanceMatrix[i][j]<<" ";
+            }
+            cout<<endl;
+        }
+
+        //cout do usuniecia
+        cout<<"dm23: "<<distanceMatrix[2][3]<<endl;
+        cout<<"dm23: "<<calcDistance(tab[2], tab[3])<<endl;
+
+        generateFirstSolution(tab, dim, solution, distanceMatrix);
+        cout<<"solution :";
         for(int i =0; i<dim; i++) cout<<solution[i]<<" ";
 
         time_t time_start = clock();
@@ -336,22 +384,20 @@ int main()
             generatePermutation(dim, tab);
             */
 
-
-            //random walk
-            randomWalkSwap(tab, dim, solution);
-
-
             /**
-            //greedy
-            greedySwap(tab, dim, solution);
+            //random walk
+            randomWalkSwap(tab, dim, solution, distanceMatrix);
             */
+
+
+            //greedy
+            greedySwap(tab, dim, solution, distanceMatrix);
+
 
             /**
             //steepest
-            steepestSwap(tab, dim, solution);
+            steepestSwap(tab, dim, solution, distanceMatrix);
             */
-
-
 
 
             counter++;
