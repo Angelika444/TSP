@@ -85,17 +85,17 @@ def result2():
     plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
     plt.xlabel('instance')
     plt.ylabel('solution quality')
-    plt.xticks(range(9), instanceNames)
+    plt.xticks(range(instanceNo), instanceNames)
     plt.yscale('log')
     plt.savefig('charts/2best.pdf', bbox_inches='tight')
     #plt.show()
     
 
     plt.figure()
-    x = [i for i in range(9)]
+    x = [i for i in range(instanceNo)]
     for i in range(5):
         plt.errorbar(x, dataMean[i], yerr=dataDeviation[i], fmt='o', label = algorithmsNames[0][i]) 
-    plt.xticks(range(9), instanceNames)
+    plt.xticks(range(instanceNo), instanceNames)
     plt.title('Mean results')
     plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
     plt.xlabel('instance')
@@ -111,7 +111,7 @@ def result2():
     plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
     plt.xlabel('instance')
     plt.ylabel('solution quality')
-    plt.xticks(range(9), instanceNames)
+    plt.xticks(range(instanceNo), instanceNames)
     plt.yscale('log')
     plt.savefig('charts/2worst.pdf', bbox_inches='tight')
     #plt.show()
@@ -123,7 +123,7 @@ def result2():
     plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
     plt.xlabel('instance')
     #plt.ylabel('solution quality')
-    plt.xticks(range(9), instanceNames)
+    plt.xticks(range(instanceNo), instanceNames)
     plt.yscale('log')
     plt.savefig('charts/2solutionNo.pdf', bbox_inches='tight')
     #plt.show()
@@ -135,7 +135,7 @@ def result2():
     plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
     plt.xlabel('instance')
     #plt.ylabel('solution quality')
-    plt.xticks(range(9), instanceNames)
+    plt.xticks(range(instanceNo), instanceNames)
     plt.yscale('log')
     plt.savefig('charts/2steps.pdf', bbox_inches='tight')
     #plt.show()
@@ -147,7 +147,7 @@ def result2():
     plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
     plt.xlabel('instance')
     #plt.ylabel('solution quality')
-    plt.xticks(range(9), instanceNames)
+    plt.xticks(range(instanceNo), instanceNames)
     plt.yscale('log')
     plt.savefig('charts/2time.pdf', bbox_inches='tight')
     #plt.show()
@@ -159,7 +159,7 @@ def result2():
     plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
     plt.xlabel('instance')
     #plt.ylabel('solution quality')
-    plt.xticks(range(9), instanceNames)
+    plt.xticks(range(instanceNo), instanceNames)
     plt.yscale('log')
     plt.savefig('charts/2iterationTime.pdf', bbox_inches='tight')
     #plt.show()
@@ -255,7 +255,92 @@ def result4(optimal):
         plt.xlabel('iteration')
         plt.ylabel('solution quality')
         plt.savefig('charts/4mean_' + instanceNames[i] + '.pdf', bbox_inches='tight')
+        
+def readOpimal(instanceNames, dim):
+    j = 0
+    permutation = []
+    for name in instanceNames:
+        file = open('optimal/' + name + '.opt.tour', "r")
+        permutation.append([])
+        for i in range(dim[j]):
+            permutation[j].append(int(file.readline()))
+        file.close()
+        j += 1
+    return permutation
+
+def similarity(optimal, algorithm, instanceNames, iterationNo):
+    similar = []
+    for i in range(len(instanceNames)):
+        similar.append([])
+        for k in range(len(algorithm[i])):
+            counter = 0
+            for j in range(len(optimal[i])):
+                x = optimal[i][j]
+                if j < len(optimal[i]) - 1:
+                    y = optimal[i][j+1]
+                else:
+                    y = optimal[i][0]
+                idx1 = algorithm[i][k].index(x)
+                idx2 = algorithm[i][k].index(y)
+                if abs(idx1 - idx2) == 1 or abs(idx1 - idx2) == len(optimal[i]):
+                    counter += 1
+            similar[i].append(counter / len(optimal[i]))
+    return similar
+        
+
+def result5(optimal):
+    file = open("results5.txt", "r")
+    instanceNo = int(file.readline())
+    iterationNo = int(file.readline())
+    instanceNames = []
+    algorithmsNames = ['G', 'S']
+    solutionG = []
+    solutionS = []
+    permutationG = []
+    permutationS = []
+    dim = []
+    l = 0
+    for i in range(instanceNo):
+        name = file.readline()[:-5]
+        if name != 'pr1002' and name != 'rd100':
+            instanceNames.append(name)
+            file.readline()
+            solutionG.append([])
+            permutationG.append([])
+            for j in range(iterationNo):
+                solutionG[i-l].append((float(file.readline()) - optimal[i]) / optimal[i])
+                permutationG[i-l].append([int(x) for x in file.readline().split()])
+            
+            file.readline()
+            solutionS.append([])
+            permutationS.append([])
+            for j in range(iterationNo):
+                solutionS[i-l].append((float(file.readline()) - optimal[i]) / optimal[i])
+                permutationS[i-l].append([int(x) for x in file.readline().split()])
+            dim.append(len(permutationS[i-l][0]))
+        else:
+            l += 1
+            for j in range(iterationNo * 4 + 2):
+                file.readline()
+        
+    file.close()
+    permutationO = readOpimal(instanceNames, dim)
+    similarG = similarity(permutationO, permutationG, instanceNames, iterationNo)
+    similarS = similarity(permutationO, permutationS, instanceNames, iterationNo)
+    #print(solutionG)
+    #print(similarS)
+    
+    for i in range(instanceNo - l):
+        plt.figure()
+        plt.scatter(solutionG[i], similarG[i], label = 'G')
+        plt.scatter(solutionS[i], similarS[i], label = 'S')
+        plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+        plt.title(instanceNames[i])
+        plt.xlabel('solution quality')
+        plt.ylabel('solution similarity')
+        plt.savefig('charts/5' + instanceNames[i] + '.pdf', bbox_inches='tight')
 
 optimal = result2()
-result3(optimal)
-result4(optimal)
+#result3(optimal)
+#result4(optimal)
+result5(optimal)

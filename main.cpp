@@ -19,6 +19,8 @@ struct point{
 const int iterations_p3 = 200;
 //liczba zapamitanych rozwiazan dla p. 4
 const int iterations_p4 = 300;
+//liczba zapamitanych rozwiazan dla p. 5
+const int iterations_p5 = 100;
 
 struct algorithmResult {
     double best = 1000000000;
@@ -409,19 +411,22 @@ int main()
     string instances[9] = {"berlin52.tsp", "st70.tsp", "eil76.tsp", "rd100.tsp", "kroA100.tsp", "lin105.tsp", "ch150.tsp", "pcb442.tsp", "pr1002.tsp"};
     double optimal[9] = {7542, 675, 538, 7910, 21282, 14379, 6528, 50778, 259045};
     ifstream datafile;
-    ofstream output, output3, output4;
+    ofstream output, output3, output4, output5;
     output.open ("results2.txt");
     output3.open("results3.txt");
     output4.open("results4.txt");
+    output5.open("results5.txt");
     string line;
     string name, type, comment, dimension, edge_weight_type, node_coord_section;
-    int instanceNo = 9;
+    int instanceNo = 8;
     output << instanceNo << endl;
     //ostatnie 2 instancje za dlugo dzialaja, zeby dla nich analizowac punkt 3 i 4
     output3 << min(instanceNo, 7) << endl;
-    output4 << min(instanceNo, 7) << endl;
+    output4 << min(instanceNo, 6) << endl;
+    output5 << min(instanceNo, 7) << endl;
     output3 << iterations_p3 << endl;
     output4 << iterations_p4 << endl;
+    output5 << iterations_p5 << endl;
     //TODO
     //pozniej zmienic k, bo na razie tylko berlin jest wczytywany
     for (int k = 0; k < instanceNo; k++)
@@ -430,6 +435,7 @@ int main()
         output << optimal[k] << endl;
         output3 << instances[k] << endl;
         output4 << instances[k] << endl;
+        output5 << instances[k] << endl;
         cout << instances[k] << endl;
         datafile.open("instances/" + instances[k]);
         getline(datafile, name);
@@ -467,6 +473,7 @@ int main()
         }
 
         createDistanceMatrix(dim, distanceMatrix, tab);
+        int solutionGS[2][100][dim];
 
         //przechowuje info o najlepszych, najgorszych rozw. itp.
         algorithmResult results[5];
@@ -488,6 +495,10 @@ int main()
             greedySwap(dim, solution, distanceMatrix, results[3], time_start, algorithmTime);
             randomSolution(dim, solution);
             results[3].actual = calcSolutionDistance(dim, solution, distanceMatrix);
+            if (results[3].iterations < iterations_p5)
+            {
+                for(i=0; i<dim; i++) solutionGS[0][results[3].iterations][i] = solution[i];
+            }
 
             results[3].iterations++;
             current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
@@ -504,6 +515,10 @@ int main()
             steepestSwap(tab, dim, solution, distanceMatrix, results[4], time_start, algorithmTime);
             randomSolution(dim, solution);
             results[4].actual = calcSolutionDistance(dim, solution, distanceMatrix);
+            if (results[4].iterations < iterations_p5)
+            {
+                for(i=0; i<dim; i++) solutionGS[1][results[4].iterations][i] = solution[i];
+            }
 
             results[4].iterations++;
             current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
@@ -684,11 +699,30 @@ int main()
                     output4 << results[i].bestSolution[j] << " " << results[i].meanSolution[j] << endl;
                 }
             }
+
+            //zapis do pliku punkt 5:
+            for (i = 3; i < 5; i++)
+            {
+                //zapis nazwy algorytmu
+                output5 << results[i].name << endl;
+                //zapis wartosci: poczatkowe koncowe rozwiazanie
+                //zapis permutacji (do kazdego elementu +1)
+                for (j = 0; j < iterations_p5; j++)
+                {
+                    output5 << results[i].finishSolution[j] << endl;
+                    for (int l=0; l<dim; l++)
+                    {
+                        output5 << solutionGS[i-3][j][l] + 1 << " ";
+                    }
+                    output5 << endl;
+                }
+            }
         }
 
     }
     output.close();
     output3.close();
     output4.close();
+    output5.close();
     return 0;
 }
