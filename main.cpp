@@ -327,7 +327,7 @@ void steepestSwap(point tab[], int dim, int solution[], double** distanceMatrix,
         }
         current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
     }
-    while (current_time < algorithmTime && swaped);
+    while (/*current_time < algorithmTime && */swaped);
 
     //wynik koncowy jest najlepszym dotychczasowym, dlatego aktualizujemy go na koncu
     actualizeResult(result, dim, solution, counter, steps);
@@ -491,7 +491,7 @@ int main()
 
             results[3].iterations++;
             current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
-        } while (current_time < algorithmTime);
+        } while (current_time < algorithmTime || results[3].iterations < 10);
         results[3].time = current_time / double(results[3].iterations);
         results[3].iterationTime = current_time / double(results[3].iterations);
 
@@ -507,11 +507,11 @@ int main()
 
             results[4].iterations++;
             current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
-        } while (current_time < algorithmTime);
+        } while (current_time < algorithmTime || results[4].iterations < 10);
         results[4].time = current_time / double(results[4].iterations);
         results[4].iterationTime = current_time / double(results[4].iterations);
 
-        double iteration_time = results[3].time * 0.9;
+        double iteration_time = results[3].time * 0.8;
         time_t innerLoopTime;
         //H heuristics - 0
         time_start = clock();
@@ -521,8 +521,8 @@ int main()
         {
             innerLoopTime = clock();
             startCity.clear();
-            do
-            {
+            //do
+            //{
                 for (i = 0; i < dim; i++) startCity.push_back(i);
                 do
                 {
@@ -530,7 +530,7 @@ int main()
                     current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
                     inner_current_time = (clock() - innerLoopTime) / double(CLOCKS_PER_SEC);
                 } while (current_time < algorithmTime && (startCity.size() > 0) && inner_current_time < iteration_time);
-            } while (inner_current_time < iteration_time);
+            //} while (inner_current_time < iteration_time);
 
             if (results[0].iterations < 10)
             {
@@ -543,8 +543,8 @@ int main()
                 results[0].steps = 0;
             }
             results[0].iterations ++;
-
-        } while (current_time < algorithmTime);
+            current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
+        } while (current_time < algorithmTime || results[0].iterations < 10);
         results[0].time = current_time / double(results[0].solutionNo);
         results[0].iterationTime = current_time / double(results[0].iterations);
 
@@ -581,7 +581,7 @@ int main()
             }
             results[1].iterations ++;
             current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
-        } while (current_time < algorithmTime);
+        } while (current_time < algorithmTime || results[1].iterations < 10);
         results[1].time = current_time / double(results[1].solutionNo);
         results[1].iterationTime = current_time / double(results[1].iterations);
 
@@ -597,7 +597,7 @@ int main()
 
             results[2].iterations++;
             current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
-        } while (current_time < algorithmTime);
+        } while (current_time < algorithmTime || results[2].iterations < 10);
         results[2].time = current_time / double(results[2].solutionNo);
         results[2].iterationTime = current_time / double(results[2].iterations);
 

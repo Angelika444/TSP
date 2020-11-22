@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import math as m
 
-def readResult2():
+def result2():
     file = open("results2.txt", "r")
     instanceNo = int(file.readline())
     instanceNames = []
@@ -34,91 +34,140 @@ def readResult2():
             results[i].append([(float(x) - optimal[i]) / optimal[i] for x in file.readline().split()])
             bestResults[i].append([(float(x) - optimal[i]) / optimal[i] for x in file.readline().split()])
             worstResults[i].append([(float(x) - optimal[i]) / optimal[i] for x in file.readline().split()])
-            solutionNo[i].append([int(x) for x in file.readline().split()])
-            steps[i].append([int(x) for x in file.readline().split()])
+            solutionNo[i].append(sum([int(x) for x in file.readline().split()]) / 10)
+            steps[i].append(sum([int(x) for x in file.readline().split()]) / 10)
             times[i].append(float(file.readline()))
             iterationTimes[i].append(float(file.readline()))
         
+        
             #oblicza srednia i odchylenie z rozwiazan
-            meanResults[i].append([])
-            deviationResults[i].append([])
-            sumResults = 0
-            for l in range(1, 11):
-                sumResults += results[i][j][l - 1]
-                meanResults[i][j].append(sumResults / l)
-                deviation = 0
-                for k in range(l):
-                    deviation += (results[i][j][k] - meanResults[i][j][l - 1]) * (results[i][j][k] - meanResults[i][j][l - 1])
-                deviationResults[i][j].append(m.sqrt(deviation / l))
-                
-            
-        #stara wersja - osobne wykresy dla kazdej instancji
-        """plt.figure()
-        xAxis = [i for i in range(1, 11)]
-        for j in range(5):
-            plt.plot(xAxis, bestResults[j], label = algorithmsNames[j][:-1] + ' best')
-            plt.errorbar(xAxis, meanResults[j], yerr=deviationResults[j], fmt='-o', label = algorithmsNames[j][:-1] + ' mean')
-            #plt.plot(xAxis, worstResults[j], label = algorithmsNames[j][:-1] + ' worst')
-        plt.title(instance + ' Compare with optimum')
-        plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
-        plt.ylim(0, 1)
-        plt.xlim(1, 10)
-        #plt.show()
-        plt.savefig('charts/' + instance + '_result.pdf', bbox_inches='tight')
-        
-        #Porównanie algorytmów H, S, G
-        alg = [0, 3, 4]
-        plt.figure()
-        xAxis = [i for i in range(1, 11)]
-        for j in alg:
-            plt.plot(xAxis, bestResults[j], 'o-', label = algorithmsNames[j][:-1] + ' best')
-            plt.errorbar(xAxis, meanResults[j], yerr=deviationResults[j], fmt='-o', label = algorithmsNames[j][:-1] + ' mean')
-            plt.plot(xAxis, worstResults[j], 'o-', label = algorithmsNames[j][:-1] + ' worst')
-        plt.title(instance + ' Compare with optimum')
-        plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
-        plt.xlim(1, 10)
-        #plt.show()
-        plt.savefig('charts/' + instance + '_G_S_H_result.pdf', bbox_inches='tight')
-        
-        #Porównanie algorytmów R, RW
-        alg = [1, 2]
-        plt.figure()
-        xAxis = [i for i in range(1, 11)]
-        for j in alg:
-            plt.plot(xAxis, bestResults[j], 'o-', label = algorithmsNames[j][:-1] + ' best')
-            plt.errorbar(xAxis, meanResults[j], yerr=deviationResults[j], fmt='-o', label = algorithmsNames[j][:-1] + ' mean')
-            plt.plot(xAxis, worstResults[j], 'o-', label = algorithmsNames[j][:-1] + ' worst')
-        plt.title(instance + ' Compare with optimum')
-        plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
-        plt.xlim(1, 10)
-        #plt.show()
-        plt.savefig('charts/' + instance + '_R_RW_result.pdf', bbox_inches='tight')
-        
-        #Liczba krokow G i S
-        plt.figure()
-        xAxis = [i for i in range(1, 11)]
-        for j in range(3, 5):
-            plt.plot(xAxis, steps[j], label = algorithmsNames[j][:-1])
-        plt.title(instance + ' Number of steps')
-        plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
-        plt.xlim(1, 10)
-        #plt.show()
-        plt.savefig('charts/' + instance + '_steps.pdf', bbox_inches='tight')
-        
-        #Liczba przejrzanyc rozwiazan
-        plt.figure()
-        xAxis = [i for i in range(1, 11)]
-        for j in range(5):
-            plt.plot(xAxis, solutionNo[j], 'o', label = algorithmsNames[j][:-1])
-        plt.title(instance + ' Number of solutions')
-        plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
-        plt.xlim(1, 10)
-        #plt.show()
-        plt.savefig('charts/' + instance + '_solution_No.pdf', bbox_inches='tight')"""
+            mean = sum(results[i][j]) / 10
+            deviation = 0
+            for x in results[i][j]:
+                deviation += (x - mean) * (x - mean)
+            deviationResults[i].append(m.sqrt(deviation / 10))
+            meanResults[i].append(mean)
     
     file.close()
     
-def readResult3():
+    dataBest = []
+    dataMean = []
+    dataWorst = []
+    dataDeviation = []
+    dataSolutionNo = []
+    dataSteps = []
+    dataTimes = []
+    dataIterationTimes = []
+    for i in range(5):
+        dataBest.append([])
+        dataMean.append([])
+        dataDeviation.append([])
+        dataWorst.append([])
+        dataSolutionNo.append([])
+        dataSteps.append([])
+        dataTimes.append([])
+        dataIterationTimes.append([])
+        for j in range(len(bestResults)):
+            dataBest[i].append(bestResults[j][i][-1])
+            dataMean[i].append(meanResults[j][i])
+            dataDeviation[i].append(deviationResults[j][i])
+            dataWorst[i].append(worstResults[j][i][-1])
+            dataSolutionNo[i].append(solutionNo[j][i])
+            dataSteps[i].append(steps[j][i])
+            dataTimes[i].append(times[j][i])
+            dataIterationTimes[i].append(iterationTimes[j][i])
+            
+    
+    plt.figure()
+    for i in range(5):
+        plt.plot(dataBest[i], 'o', label = algorithmsNames[0][i]) 
+    plt.title('Best results')
+    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.xlabel('instance')
+    plt.ylabel('solution quality')
+    plt.xticks(range(9), instanceNames)
+    plt.yscale('log')
+    plt.savefig('charts/2best.pdf', bbox_inches='tight')
+    #plt.show()
+    
+
+    plt.figure()
+    x = [i for i in range(9)]
+    for i in range(5):
+        plt.errorbar(x, dataMean[i], yerr=dataDeviation[i], fmt='o', label = algorithmsNames[0][i]) 
+    plt.xticks(range(9), instanceNames)
+    plt.title('Mean results')
+    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.xlabel('instance')
+    plt.ylabel('solution quality')
+    plt.yscale('log')
+    plt.savefig('charts/2mean.pdf', bbox_inches='tight')
+    #plt.show()
+    
+    plt.figure()
+    for i in range(5):
+        plt.plot(dataWorst[i], 'o', label = algorithmsNames[0][i]) 
+    plt.title('Worst results')
+    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.xlabel('instance')
+    plt.ylabel('solution quality')
+    plt.xticks(range(9), instanceNames)
+    plt.yscale('log')
+    plt.savefig('charts/2worst.pdf', bbox_inches='tight')
+    #plt.show()
+    
+    plt.figure()
+    for i in range(5):
+        plt.plot(dataSolutionNo[i], 'o', label = algorithmsNames[0][i]) 
+    plt.title('Solution number')
+    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.xlabel('instance')
+    #plt.ylabel('solution quality')
+    plt.xticks(range(9), instanceNames)
+    plt.yscale('log')
+    plt.savefig('charts/2solutionNo.pdf', bbox_inches='tight')
+    #plt.show()
+    
+    plt.figure()
+    for i in range(3, 5):
+        plt.plot(dataSteps[i], 'o', label = algorithmsNames[0][i]) 
+    plt.title('Number of steps')
+    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.xlabel('instance')
+    #plt.ylabel('solution quality')
+    plt.xticks(range(9), instanceNames)
+    plt.yscale('log')
+    plt.savefig('charts/2steps.pdf', bbox_inches='tight')
+    #plt.show()
+    
+    plt.figure()
+    for i in range(5):
+        plt.plot(dataTimes[i], 'o', label = algorithmsNames[0][i]) 
+    plt.title('Mean time of 1 run')
+    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.xlabel('instance')
+    #plt.ylabel('solution quality')
+    plt.xticks(range(9), instanceNames)
+    plt.yscale('log')
+    plt.savefig('charts/2time.pdf', bbox_inches='tight')
+    #plt.show()
+    
+    plt.figure()
+    for i in range(5):
+        plt.plot(dataIterationTimes[i], 'o', label = algorithmsNames[0][i]) 
+    plt.title('Mean iteration time')
+    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.xlabel('instance')
+    #plt.ylabel('solution quality')
+    plt.xticks(range(9), instanceNames)
+    plt.yscale('log')
+    plt.savefig('charts/2iterationTime.pdf', bbox_inches='tight')
+    #plt.show()
+    
+    return optimal
+    
+    
+def result3(optimal):
     file = open("results3.txt", "r")
     instanceNo = int(file.readline())
     iterationNo = int(file.readline())
@@ -135,19 +184,45 @@ def readResult3():
         finishSolutionG.append([])
         for j in range(iterationNo):
             line = file.readline().split()
-            startSolutionG[i].append(float(line[0]))
-            finishSolutionG[i].append(float(line[1]))
+            startSolutionG[i].append((float(line[0]) - optimal[i]) / optimal[i])
+            finishSolutionG[i].append((float(line[1]) - optimal[i]) / optimal[i])
         
         file.readline()
         startSolutionS.append([])
         finishSolutionS.append([])
         for j in range(iterationNo):
             line = file.readline().split()
-            startSolutionS[i].append(float(line[0]))
-            finishSolutionS[i].append(float(line[1]))
+            startSolutionS[i].append((float(line[0]) - optimal[i]) / optimal[i])
+            finishSolutionS[i].append((float(line[1]) - optimal[i]) / optimal[i])
     file.close()
     
-def readResult4():
+    plt.figure()
+    plt.scatter(startSolutionG[0], finishSolutionG[0])
+    plt.scatter(startSolutionS[0], finishSolutionS[0])
+    
+    
+    """for i in range(5):
+        plt.plot(dataIterationTimes[i], 'o', label = algorithmsNames[0][i]) 
+    plt.title('Mean iteration time')
+    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.xlabel('instance')
+    #plt.ylabel('solution quality')
+    plt.xticks(range(9), instanceNames)
+    plt.yscale('log')
+    plt.savefig('charts/2iterationTime.pdf', bbox_inches='tight')
+    #plt.show()
+    
+    fig=plt.figure()
+    ax=fig.add_axes([0,0,1,1])
+    ax.scatter(grades_range, girls_grades, color='r')
+    ax.scatter(grades_range, boys_grades, color='b')
+    ax.set_xlabel('Grades Range')
+    ax.set_ylabel('Grades Scored')
+    ax.set_title('scatter plot')
+    plt.show()"""
+    
+    
+def result4():
     file = open("results4.txt", "r")
     instanceNo = int(file.readline())
     iterationNo = int(file.readline())
@@ -176,6 +251,6 @@ def readResult4():
             meanSolutionS[i].append(float(line[1]))
     file.close()
 
-readResult2()
-readResult3()
-readResult4()
+optimal = result2()
+#result3(optimal)
+#result4()
