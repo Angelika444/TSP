@@ -1,0 +1,7 @@
+liczba instancji
+liczba iteracji
+nazwa instancji
+G - nazwa algorytmu
+tyle linii ile jest iteracji: wartoœæ_pocz¹tkowa wartoœæ_koñcowa
+S - nazwa algorytmu
+tyle linii ile jest iteracji: wartoœæ_pocz¹tkowa wartoœæ_koñcowa

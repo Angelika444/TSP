@@ -15,9 +15,14 @@ struct point{
     float y;
 };
 
+//liczba zapamitanych rozwiazan dla p. 3
+const int iterations_p3 = 200;
+//liczba zapamitanych rozwiazan dla p. 4
+const int iterations_p4 = 300;
+
 struct algorithmResult {
-    double best = -1;
-    double worst;
+    double best = 1000000000;
+    double worst = -1;
     double sum = 0;
     //liczba krokow - dla greedy i steepest
     int steps = 0;
@@ -27,12 +32,17 @@ struct algorithmResult {
     double actual;
     int iterations = 0;
     double time;
+    double iterationTime;
     string name;
     double firstBestResults[10];
     double firstWorstResults[10];
     double first10Results[10];
     int firstSteps[10] = {0};
     int firstSolutionNo[10];
+    double startSolution[iterations_p3];
+    double finishSolution[iterations_p3];
+    double bestSolution[iterations_p4];
+    double meanSolution[iterations_p4];
 };
 
 int extractIntegerWords(string str)
@@ -154,25 +164,8 @@ void HSolution(point tab[], int dim, int solution[], double** distanceMatrix, ve
         distance += min_distance;
     }
     distance += getDistance(solution[0], solution[dim-1], distanceMatrix);
-
-    if (result.iterations < 10)
-    {
-        //jezeli jest to pierwsze nasze rozwiazanie
-        if (result.best == -1)
-        {
-            result.best = distance;
-            result.worst = distance;
-        }
-        else if (distance < result.best) result.best = distance;
-        else if (distance > result.worst) result.worst = distance;
-        result.sum += distance;
-        result.solutionNo++;
-        result.first10Results[result.iterations] = distance;
-        result.firstBestResults[result.iterations] = result.best;
-        result.firstWorstResults[result.iterations] = result.worst;
-        result.firstSolutionNo[result.iterations] = result.iterations + 1;
-    }
-
+    result.actual = distance;
+    actualizeResult(result, dim, solution, 1, 1);
 
 }
 
@@ -236,6 +229,7 @@ void greedySwap(int dim, int solution[], double** distanceMatrix, algorithmResul
     bool swaped;
     time_t current_time;
     int counter = 1, steps = 0;
+    if (result.iterations < iterations_p3) result.startSolution[result.iterations] = result.actual;
     do
     {
         swaped = false;
@@ -269,15 +263,18 @@ void greedySwap(int dim, int solution[], double** distanceMatrix, algorithmResul
     } while (/*current_time < algorithmTime && */swaped);
 
     //wynik koncowy jest najlepszym dotychczasowym, dlatego aktualizujemy go na koncu
+    actualizeResult(result, dim, solution, counter, steps);
     if (result.iterations < 10)
     {
-        actualizeResult(result, dim, solution, counter, steps);
         result.firstBestResults[result.iterations] = result.best;
         result.firstWorstResults[result.iterations] = result.worst;
         result.first10Results[result.iterations] = result.actual;
         result.firstSteps[result.iterations] = steps;
         result.firstSolutionNo[result.iterations] = counter;
     }
+    if (result.iterations < iterations_p3) result.finishSolution[result.iterations] = result.actual;
+    if (result.iterations < iterations_p4) result.bestSolution[result.iterations] = result.best;
+    if (result.iterations < iterations_p4) result.meanSolution[result.iterations] = result.sum / (result.iterations + 1);
 
 }
 
@@ -290,6 +287,7 @@ void steepestSwap(point tab[], int dim, int solution[], double** distanceMatrix,
     double best_diff = 0.0;
     double sol_diff = 0.0;
     int best_i=0, best_j=0;
+    if (result.iterations < iterations_p3) result.startSolution[result.iterations] = result.actual;
 
     do
     {
@@ -332,15 +330,18 @@ void steepestSwap(point tab[], int dim, int solution[], double** distanceMatrix,
     while (current_time < algorithmTime && swaped);
 
     //wynik koncowy jest najlepszym dotychczasowym, dlatego aktualizujemy go na koncu
+    actualizeResult(result, dim, solution, counter, steps);
     if (result.iterations < 10)
     {
-        actualizeResult(result, dim, solution, counter, steps);
         result.firstBestResults[result.iterations] = result.best;
         result.firstWorstResults[result.iterations] = result.worst;
         result.first10Results[result.iterations] = result.actual;
         result.firstSteps[result.iterations] = steps;
         result.firstSolutionNo[result.iterations] = counter;
     }
+    if (result.iterations < iterations_p3) result.finishSolution[result.iterations] = result.actual;
+    if (result.iterations < iterations_p4) result.bestSolution[result.iterations] = result.best;
+    if (result.iterations < iterations_p4) result.meanSolution[result.iterations] = result.sum / (result.iterations + 1);
 
 }
 
@@ -395,7 +396,7 @@ void randomWalkSwap(point tab[], int dim, int solution[], double** distanceMatri
 int main()
 {
     srand(time(0));
-    double current_time;
+    double current_time, inner_current_time;
     int n = 10000;
     int permutation [n];
     int i, j;
@@ -405,21 +406,31 @@ int main()
     }
 
 
-    string instances[9] = {"berlin52.tsp", "ch150.tsp", "eil76.tsp", "kroA100.tsp", "lin105.tsp", "pcb442.tsp", "pr1002.tsp", "rd100.tsp", "st70.tsp"};
-    double optimal[9] = {7542, 6528, 538, 21282, 14379, 50778, 259045, 7910, 675};
+    string instances[9] = {"berlin52.tsp", "st70.tsp", "eil76.tsp", "rd100.tsp", "kroA100.tsp", "lin105.tsp", "ch150.tsp", "pcb442.tsp", "pr1002.tsp"};
+    double optimal[9] = {7542, 675, 538, 7910, 21282, 14379, 6528, 50778, 259045};
     ifstream datafile;
-    ofstream output;
-    output.open ("results.txt");
+    ofstream output, output3, output4;
+    output.open ("results2.txt");
+    output3.open("results3.txt");
+    output4.open("results4.txt");
     string line;
     string name, type, comment, dimension, edge_weight_type, node_coord_section;
-    int instanceNo = 2;
+    int instanceNo = 9;
     output << instanceNo << endl;
+    //ostatnie 2 instancje za dlugo dzialaja, zeby dla nich analizowac punkt 3 i 4
+    output3 << min(instanceNo, 7) << endl;
+    output4 << min(instanceNo, 7) << endl;
+    output3 << iterations_p3 << endl;
+    output4 << iterations_p4 << endl;
     //TODO
     //pozniej zmienic k, bo na razie tylko berlin jest wczytywany
     for (int k = 0; k < instanceNo; k++)
     {
         output << instances[k] << endl;
         output << optimal[k] << endl;
+        output3 << instances[k] << endl;
+        output4 << instances[k] << endl;
+        cout << instances[k] << endl;
         datafile.open("instances/" + instances[k]);
         getline(datafile, name);
         getline(datafile, type);
@@ -466,25 +477,10 @@ int main()
         //H losuje poczatkowe miasto - zrobione, zeby za kazdym razem bylo ono inne (dzieki startCity)
         //jesli skonstruuje rozwiazanie dla wszystkich mozliwych miast poczatkowych, to algorytm jest powtarzany, aby zmierzyc czas
 
-        int algorithmTime = 1;
-        //H heuristics - 0
-        time_t time_start = clock();
-        results[0].name = "H";
-        vector <int> startCity;
-        do
-        {
-            for (i = 0; i < dim; i++) startCity.push_back(i);
-            do
-            {
-                HSolution(tab, dim, solution, distanceMatrix, startCity, results[0]);
-                current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
-                results[0].iterations++;
-            } while (current_time < algorithmTime && (startCity.size() > 0));
-        } while (current_time < algorithmTime);
-        results[0].time = current_time / double(results[0].iterations);
+        int algorithmTime = 10;
 
         //greedy - 3
-        time_start = clock();
+        time_t time_start = clock();
         randomSolution(dim, solution);
         initResult(results[3], dim, solution, distanceMatrix, "G");
         do
@@ -497,6 +493,7 @@ int main()
             current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
         } while (current_time < algorithmTime);
         results[3].time = current_time / double(results[3].iterations);
+        results[3].iterationTime = current_time / double(results[3].iterations);
 
         //steepest - 4
         time_start = clock();
@@ -512,10 +509,47 @@ int main()
             current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
         } while (current_time < algorithmTime);
         results[4].time = current_time / double(results[4].iterations);
+        results[4].iterationTime = current_time / double(results[4].iterations);
+
+        double iteration_time = results[3].time * 0.9;
+        time_t innerLoopTime;
+        //H heuristics - 0
+        time_start = clock();
+        results[0].name = "H";
+        vector <int> startCity;
+        do
+        {
+            innerLoopTime = clock();
+            startCity.clear();
+            do
+            {
+                for (i = 0; i < dim; i++) startCity.push_back(i);
+                do
+                {
+                    HSolution(tab, dim, solution, distanceMatrix, startCity, results[0]);
+                    current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
+                    inner_current_time = (clock() - innerLoopTime) / double(CLOCKS_PER_SEC);
+                } while (current_time < algorithmTime && (startCity.size() > 0) && inner_current_time < iteration_time);
+            } while (inner_current_time < iteration_time);
+
+            if (results[0].iterations < 10)
+            {
+                results[0].firstBestResults[results[0].iterations] = results[0].best;
+                results[0].firstWorstResults[results[0].iterations] = results[0].worst;
+                //jako rozwiazanie z iteracji zapisywana jest srednia rozwiazan z tej iteracji
+                results[0].first10Results[results[0].iterations] = results[0].sum / results[0].steps;
+                results[0].firstSolutionNo[results[0].iterations] = results[0].steps;
+                results[0].sum = 0;
+                results[0].steps = 0;
+            }
+            results[0].iterations ++;
+
+        } while (current_time < algorithmTime);
+        results[0].time = current_time / double(results[0].solutionNo);
+        results[0].iterationTime = current_time / double(results[0].iterations);
 
         //random - 1
         time_start = clock();
-        time_t innerLoopTime;
         randomSolution(dim, solution);
         initResult(results[1], dim, solution, distanceMatrix, "R");
         double distance = calcSolutionDistance(dim, solution, distanceMatrix);
@@ -533,7 +567,7 @@ int main()
                 results[1].actual = calcSolutionDistance(dim, solution, distanceMatrix);
                 actualizeResult(results[1], dim, solution, 1, 1);
                 current_time = (clock() - innerLoopTime) / double(CLOCKS_PER_SEC);
-            } while (current_time < results[3].time);
+            } while (current_time < iteration_time);
 
             if (results[1].iterations < 10)
             {
@@ -548,7 +582,8 @@ int main()
             results[1].iterations ++;
             current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
         } while (current_time < algorithmTime);
-        results[1].time = current_time / double(results[1].iterations);
+        results[1].time = current_time / double(results[1].solutionNo);
+        results[1].iterationTime = current_time / double(results[1].iterations);
 
         //random walk - 2
         time_start = clock();
@@ -556,33 +591,33 @@ int main()
         initResult(results[2], dim, solution, distanceMatrix, "RW");
         do
         {
-            randomWalkSwap(tab, dim, solution, distanceMatrix, results[2], results[3].time);
+            randomWalkSwap(tab, dim, solution, distanceMatrix, results[2], iteration_time);
             randomSolution(dim, solution);
             results[2].actual = calcSolutionDistance(dim, solution, distanceMatrix);
 
             results[2].iterations++;
             current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
         } while (current_time < algorithmTime);
-        results[2].time = current_time / double(results[2].iterations);
+        results[2].time = current_time / double(results[2].solutionNo);
+        results[2].iterationTime = current_time / double(results[2].iterations);
 
         //wyswietlenie statystyk
-        //czesc moze nie zgadzac sie na razie, bo zmienia sie kod
         for (i = 0; i < 5; i++)
         {
             cout << results[i].name << ": ";
             cout << "best: " << results[i].best << ", ";
             cout << "worst: " << results[i].worst << ", ";
-            //W RW kazdy posredni wynik moze byc najlepszy, wiec srednia liczona jest ze wszystkich przejrzanych rozwiaqzan
-            if (i == 2) cout << "mean: " << results[i].sum / double(results[i].solutionNo) << ", ";
-            else cout << "mean: " << results[i].sum / double(results[i].iterations) << ", ";
+            //W G i S liczony jest tylko koncowy wynik dla kazdej iteracji, w pozostalych algorytmach - kazady posredni wynik
+            if (i == 3 || i == 4) cout << "mean: " << results[i].sum / double(results[i].iterations) << ", ";
+            else cout << "mean: " << results[i].sum / double(results[i].solutionNo) << ", ";
             cout << "iterations: " << results[i].iterations << ", ";
-            cout << "steps: " << results[i].steps << ", ";
+            //cout << "steps: " << results[i].steps << ", ";
             cout << "number reviewed solutions: " << results[i].solutionNo << ", ";
             cout << "mean time: " << results[i].time << ", ";
             cout<<endl;
         }
 
-        //zapis do pliku:
+        //zapis do pliku punkt 2:
         for (i = 0; i < 5; i++)
         {
             //zapis nazwy algorytmu
@@ -618,8 +653,42 @@ int main()
                 output << results[i].firstSteps[j] << " ";
             }
             output << endl;
+            //zapis sredniego czasu 1 puszczenia algorytmu
+            output << results[i].time << endl;
+            //zapis sredniego czasu 1 iteracji algorytmu (dla G i S to to samo co wyzej, dla pozostalych w 1 iteracji wykonywane bylo wiele powtorzen algorytmu
+            output << results[i].iterationTime << endl;
         }
+
+        if (k < 7)
+        {
+            //zapis do pliku punkt 3:
+            for (i = 3; i < 5; i++)
+            {
+                //zapis nazwy algorytmu
+                output3 << results[i].name << endl;
+                //zapis wartosci: poczatkowe koncowe rozwiazanie
+                for (j = 0; j < iterations_p3; j++)
+                {
+                    output3 << results[i].startSolution[j] << " " << results[i].finishSolution[j] << endl;
+                }
+            }
+
+            //zapis do pliku punkt 4:
+            for (i = 3; i < 5; i++)
+            {
+                //zapis nazwy algorytmu
+                output4 << results[i].name << endl;
+                //zapis wartosci: poczatkowe koncowe rozwiazanie
+                for (j = 0; j < iterations_p4; j++)
+                {
+                    output4 << results[i].bestSolution[j] << " " << results[i].meanSolution[j] << endl;
+                }
+            }
+        }
+
     }
     output.close();
+    output3.close();
+    output4.close();
     return 0;
 }
