@@ -196,33 +196,18 @@ def result3(optimal):
             finishSolutionS[i].append((float(line[1]) - optimal[i]) / optimal[i])
     file.close()
     
-    plt.figure()
-    plt.scatter(startSolutionG[0], finishSolutionG[0])
-    plt.scatter(startSolutionS[0], finishSolutionS[0])
+    for i in range(instanceNo):
+        plt.figure()
+        plt.scatter(startSolutionG[i], finishSolutionG[i], label = 'G')
+        plt.scatter(startSolutionS[i], finishSolutionS[i], label = 'S')
+        plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+        plt.title(instanceNames[i])
+        plt.xlabel('starting solution quality')
+        plt.ylabel('finish solution quality')
+        plt.savefig('charts/3' + instanceNames[i] + '.pdf', bbox_inches='tight')
     
     
-    """for i in range(5):
-        plt.plot(dataIterationTimes[i], 'o', label = algorithmsNames[0][i]) 
-    plt.title('Mean iteration time')
-    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
-    plt.xlabel('instance')
-    #plt.ylabel('solution quality')
-    plt.xticks(range(9), instanceNames)
-    plt.yscale('log')
-    plt.savefig('charts/2iterationTime.pdf', bbox_inches='tight')
-    #plt.show()
-    
-    fig=plt.figure()
-    ax=fig.add_axes([0,0,1,1])
-    ax.scatter(grades_range, girls_grades, color='r')
-    ax.scatter(grades_range, boys_grades, color='b')
-    ax.set_xlabel('Grades Range')
-    ax.set_ylabel('Grades Scored')
-    ax.set_title('scatter plot')
-    plt.show()"""
-    
-    
-def result4():
+def result4(optimal):
     file = open("results4.txt", "r")
     instanceNo = int(file.readline())
     iterationNo = int(file.readline())
@@ -239,18 +224,38 @@ def result4():
         meanSolutionG.append([])
         for j in range(iterationNo):
             line = file.readline().split()
-            bestSolutionG[i].append(float(line[0]))
-            meanSolutionG[i].append(float(line[1]))
+            bestSolutionG[i].append((float(line[0]) - optimal[i]) / optimal[i])
+            meanSolutionG[i].append((float(line[1]) - optimal[i]) / optimal[i])
         
         file.readline()
         bestSolutionS.append([])
         meanSolutionS.append([])
         for j in range(iterationNo):
             line = file.readline().split()
-            bestSolutionS[i].append(float(line[0]))
-            meanSolutionS[i].append(float(line[1]))
+            bestSolutionS[i].append((float(line[0]) - optimal[i]) / optimal[i])
+            meanSolutionS[i].append((float(line[1]) - optimal[i]) / optimal[i])
     file.close()
+    
+    x = [i for i in range(iterationNo)]
+    for i in range(instanceNo):
+        plt.figure()
+        plt.plot(x, bestSolutionG[i], label = 'G')
+        plt.plot(x, bestSolutionS[i], label = 'S')
+        plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+        plt.title('Best ' + instanceNames[i])
+        plt.xlabel('iteration')
+        plt.ylabel('solution quality')
+        plt.savefig('charts/4best_' + instanceNames[i] + '.pdf', bbox_inches='tight')
+        
+        plt.figure()
+        plt.plot(x, meanSolutionG[i], label = 'G')
+        plt.plot(x, meanSolutionS[i], label = 'S')
+        plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+        plt.title('Mean ' + instanceNames[i])
+        plt.xlabel('iteration')
+        plt.ylabel('solution quality')
+        plt.savefig('charts/4mean_' + instanceNames[i] + '.pdf', bbox_inches='tight')
 
 optimal = result2()
-#result3(optimal)
-#result4()
+result3(optimal)
+result4(optimal)
