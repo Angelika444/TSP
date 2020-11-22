@@ -211,6 +211,76 @@ double calcDistDif(int solution[], int i, int j, int dim, double** distanceMatri
     return sol_diff;
 }
 
+double calcDistDifSwap(int solution[], int i, int j, int dim, double** distanceMatrix)
+{
+    //obliczam roznice w jakosci rozwiazania zamiast liczyc wszystko od nowa
+    double sol_diff = 0.0;
+    //kiedy i=0 i j=dim-1
+    if (i == 0 && j == dim - 1)
+    {
+        sol_diff = 0;
+        sol_diff -= getDistance(solution[j], solution[j-1], distanceMatrix);
+        sol_diff += getDistance(solution[i], solution[j-1], distanceMatrix);
+        sol_diff -= getDistance(solution[i], solution[i+1], distanceMatrix);
+        sol_diff += getDistance(solution[j], solution[i+1], distanceMatrix);
+    }
+    else if (j - i == 1)
+    {
+        if (i != 0)
+        {
+            sol_diff -= getDistance(solution[i-1], solution[i], distanceMatrix);
+            sol_diff += getDistance(solution[i-1], solution[j], distanceMatrix);
+        }
+        else
+        {
+            sol_diff -= getDistance(solution[dim-1], solution[i], distanceMatrix);
+            sol_diff += getDistance(solution[dim-1], solution[j], distanceMatrix);
+        }
+
+        if (j != dim-1)
+        {
+            sol_diff -= getDistance(solution[j], solution[j+1], distanceMatrix);
+            sol_diff += getDistance(solution[i], solution[j+1], distanceMatrix);
+        }
+        else
+        {
+            sol_diff -= getDistance(solution[j], solution[0], distanceMatrix);
+            sol_diff += getDistance(solution[i], solution[0], distanceMatrix);
+        }
+    }
+    else
+    {
+        if (i != 0)
+        {
+            sol_diff -= getDistance(solution[i-1], solution[i], distanceMatrix);
+            sol_diff += getDistance(solution[i-1], solution[j], distanceMatrix);
+        }
+        else
+        {
+            sol_diff -= getDistance(solution[dim-1], solution[i], distanceMatrix);
+            sol_diff += getDistance(solution[dim-1], solution[j], distanceMatrix);
+        }
+        sol_diff -= getDistance(solution[i+1], solution[i], distanceMatrix);
+        sol_diff += getDistance(solution[i+1], solution[j], distanceMatrix);
+
+        if (j != dim-1)
+        {
+            sol_diff -= getDistance(solution[j], solution[j+1], distanceMatrix);
+            sol_diff += getDistance(solution[i], solution[j+1], distanceMatrix);
+        }
+        else
+        {
+            sol_diff -= getDistance(solution[j], solution[0], distanceMatrix);
+            sol_diff += getDistance(solution[i], solution[0], distanceMatrix);
+        }
+        sol_diff -= getDistance(solution[j], solution[j-1], distanceMatrix);
+        sol_diff += getDistance(solution[i], solution[j-1], distanceMatrix);
+    }
+
+
+    return sol_diff;
+}
+
 //zamiana wszystkich elementow w luku - ostatni z pierwszym az nie dojdziemy do srodka
 void swapElements(int i, int j, int dim, int solution[])
 {
@@ -243,6 +313,8 @@ void greedySwap(int dim, int solution[], double** distanceMatrix, algorithmResul
             {
                 counter++;
                 double sol_diff = calcDistDif(solution, i, j, dim, distanceMatrix);
+                //przy zamianie elementow
+                //double sol_diff = calcDistDifSwap(solution, i, j, dim, distanceMatrix);
 
                 //jesli uzyskalismy poprawe, to nalezy dokonac zamiany od razu
                 if (sol_diff < 0)
@@ -302,6 +374,8 @@ void steepestSwap(point tab[], int dim, int solution[], double** distanceMatrix,
             for(int j = i+1; j < dim; j++)
             {
                 double sol_diff = calcDistDif(solution, i, j, dim, distanceMatrix);
+                //przy zamianie elementow
+                //double sol_diff = calcDistDifSwap(solution, i, j, dim, distanceMatrix);
 
                 //jesli uzyskalismy poprawe, to nalezy zapisac jej wartosc do porownania z innymi
                 if(sol_diff < best_diff)
@@ -318,7 +392,7 @@ void steepestSwap(point tab[], int dim, int solution[], double** distanceMatrix,
             //odwrocenie luku - trzeba odwrocic wszyskie elementy pomiedzy i a j,
             swapElements(best_i, best_j, dim, solution);
             //przy zamianie par - w elementach nieobowiazkowych jest, zeby porownac te 2 sasiedztwa
-            //swap(solution[i], solution[j]);
+            //swap(solution[best_i], solution[best_j]);
 
             steps++;
             result.actual += best_diff;
@@ -411,19 +485,23 @@ int main()
     string instances[9] = {"berlin52.tsp", "st70.tsp", "eil76.tsp", "rd100.tsp", "kroA100.tsp", "lin105.tsp", "ch150.tsp", "pcb442.tsp", "pr1002.tsp"};
     double optimal[9] = {7542, 675, 538, 7910, 21282, 14379, 6528, 50778, 259045};
     ifstream datafile;
-    ofstream output, output3, output4, output5;
+    ofstream output, output3, output4, output5, outputH, outputSwap;
     output.open ("results2.txt");
     output3.open("results3.txt");
     output4.open("results4.txt");
     output5.open("results5.txt");
+    outputH.open("resultsH.txt");
+    outputSwap.open("resultsSwap.txt");
     string line;
     string name, type, comment, dimension, edge_weight_type, node_coord_section;
-    int instanceNo = 8;
+    int instanceNo = 9;
     output << instanceNo << endl;
     //ostatnie 2 instancje za dlugo dzialaja, zeby dla nich analizowac punkt 3 i 4
     output3 << min(instanceNo, 7) << endl;
     output4 << min(instanceNo, 6) << endl;
     output5 << min(instanceNo, 7) << endl;
+    outputH << instanceNo << endl;
+    outputSwap << instanceNo << endl;
     output3 << iterations_p3 << endl;
     output4 << iterations_p4 << endl;
     output5 << iterations_p5 << endl;
@@ -436,6 +514,8 @@ int main()
         output3 << instances[k] << endl;
         output4 << instances[k] << endl;
         output5 << instances[k] << endl;
+        outputH << instances[k] << endl;
+        outputSwap << instances[k] << endl;
         cout << instances[k] << endl;
         datafile.open("instances/" + instances[k]);
         getline(datafile, name);
@@ -483,8 +563,8 @@ int main()
         //potem jest puszczany ponownie z inna permutacja az nie skonczy sie czas
         //H losuje poczatkowe miasto - zrobione, zeby za kazdym razem bylo ono inne (dzieki startCity)
         //jesli skonstruuje rozwiazanie dla wszystkich mozliwych miast poczatkowych, to algorytm jest powtarzany, aby zmierzyc czas
-
         int algorithmTime = 10;
+
 
         //greedy - 3
         time_t time_start = clock();
@@ -719,10 +799,145 @@ int main()
             }
         }
 
+/*
+        //start from H solution
+        vector <int> startCity;
+        for (i = 0; i < dim; i++) startCity.push_back(i);
+
+        //greedy - 3
+        time_t time_start = clock();
+        HSolution(tab, dim, solution, distanceMatrix, startCity, results[0]);
+        initResult(results[3], dim, solution, distanceMatrix, "G");
+        do
+        {
+            greedySwap(dim, solution, distanceMatrix, results[3], time_start, algorithmTime);
+            startCity.clear();
+            for (i = 0; i < dim; i++) startCity.push_back(i);
+            HSolution(tab, dim, solution, distanceMatrix, startCity, results[0]);
+            results[3].actual = calcSolutionDistance(dim, solution, distanceMatrix);
+            if (results[3].iterations < iterations_p5)
+            {
+                for(i=0; i<dim; i++) solutionGS[0][results[3].iterations][i] = solution[i];
+            }
+
+            results[3].iterations++;
+            current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
+        } while (current_time < algorithmTime || results[3].iterations < 10);
+        results[3].time = current_time / double(results[3].iterations);
+        results[3].iterationTime = current_time / double(results[3].iterations);
+
+        //steepest - 4
+        time_start = clock();
+        HSolution(tab, dim, solution, distanceMatrix, startCity, results[0]);
+        initResult(results[4], dim, solution, distanceMatrix, "S");
+        do
+        {
+            steepestSwap(tab, dim, solution, distanceMatrix, results[4], time_start, algorithmTime);
+            startCity.clear();
+            for (i = 0; i < dim; i++) startCity.push_back(i);
+            HSolution(tab, dim, solution, distanceMatrix, startCity, results[0]);
+            results[4].actual = calcSolutionDistance(dim, solution, distanceMatrix);
+            if (results[4].iterations < iterations_p5)
+            {
+                for(i=0; i<dim; i++) solutionGS[1][results[4].iterations][i] = solution[i];
+            }
+
+            results[4].iterations++;
+            current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
+        } while (current_time < algorithmTime || results[4].iterations < 10);
+        results[4].time = current_time / double(results[4].iterations);
+        results[4].iterationTime = current_time / double(results[4].iterations);
+
+        for (i = 3; i < 5; i++)
+        {
+            //zapis nazwy algorytmu
+            outputH << results[i].name << endl;
+            //zapis rozwiazania w kolejnych iteracjach
+            for (j = 0; j < 10; j++)
+            {
+                outputH << results[i].first10Results[j] << " ";
+            }
+            outputH << endl;
+            //zapis najlepszych rozwiazan
+            for (j = 0; j < 10; j++)
+            {
+                outputH << results[i].firstBestResults[j] << " ";
+            }
+            outputH << endl;
+            //zapis sredniego czasu 1 puszczenia algorytmu
+            outputH << results[i].time << endl;
+        }*/
+
+
+        //kod tylko dla G i S
+        //greedy - 3
+        /*time_t time_start = clock();
+        randomSolution(dim, solution);
+        initResult(results[3], dim, solution, distanceMatrix, "G");
+        do
+        {
+            greedySwap(dim, solution, distanceMatrix, results[3], time_start, algorithmTime);
+            randomSolution(dim, solution);
+            results[3].actual = calcSolutionDistance(dim, solution, distanceMatrix);
+            if (results[3].iterations < iterations_p5)
+            {
+                for(i=0; i<dim; i++) solutionGS[0][results[3].iterations][i] = solution[i];
+            }
+
+            results[3].iterations++;
+            current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
+        } while (current_time < algorithmTime || results[3].iterations < 10);
+        results[3].time = current_time / double(results[3].iterations);
+        results[3].iterationTime = current_time / double(results[3].iterations);
+
+        //steepest - 4
+        time_start = clock();
+        randomSolution(dim, solution);
+        initResult(results[4], dim, solution, distanceMatrix, "S");
+        do
+        {
+            steepestSwap(tab, dim, solution, distanceMatrix, results[4], time_start, algorithmTime);
+            randomSolution(dim, solution);
+            results[4].actual = calcSolutionDistance(dim, solution, distanceMatrix);
+            if (results[4].iterations < iterations_p5)
+            {
+                for(i=0; i<dim; i++) solutionGS[1][results[4].iterations][i] = solution[i];
+            }
+
+            results[4].iterations++;
+            current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
+        } while (current_time < algorithmTime || results[4].iterations < 10);
+        results[4].time = current_time / double(results[4].iterations);
+        results[4].iterationTime = current_time / double(results[4].iterations);
+
+        //zamiana elementow zamiast odwrocenia luku
+        for (i = 3; i < 5; i++)
+        {
+            //zapis nazwy algorytmu
+            outputSwap << results[i].name << endl;
+            //zapis rozwiazania w kolejnych iteracjach
+            for (j = 0; j < 10; j++)
+            {
+                outputSwap << results[i].first10Results[j] << " ";
+            }
+            outputSwap << endl;
+            //zapis najlepszych rozwiazan
+            for (j = 0; j < 10; j++)
+            {
+                outputSwap << results[i].firstBestResults[j] << " ";
+            }
+            outputSwap << endl;
+            //zapis sredniego czasu 1 puszczenia algorytmu
+            outputSwap << results[i].time << endl;
+        }*/
+
+
     }
     output.close();
     output3.close();
     output4.close();
     output5.close();
+    outputH.close();
+    outputSwap.close();
     return 0;
 }
