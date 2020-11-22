@@ -164,7 +164,7 @@ def result2():
     plt.savefig('charts/2iterationTime.pdf', bbox_inches='tight')
     #plt.show()
     
-    return optimal
+    return optimal, dataBest, dataMean, dataDeviation, dataTimes
     
     
 def result3(optimal):
@@ -339,8 +339,101 @@ def result5(optimal):
         plt.xlabel('solution quality')
         plt.ylabel('solution similarity')
         plt.savefig('charts/5' + instanceNames[i] + '.pdf', bbox_inches='tight')
+        
+def startH(optimal, dataBest, dataMean, dataDeviation, dataTimes):
+    file = open("resultsH.txt", "r")
+    instanceNo = int(file.readline())
+    instanceNames = []
+    algorithmsNames = []
+    results = []
+    bestResults = []
+    meanResults = []
+    deviationResults = []
+    times = []
+    for i in range(instanceNo):
+        instanceNames.append(file.readline()[:-5])
+        algorithmsNames.append([])
+        results.append([])
+        bestResults.append([])
+        times.append([])
+        meanResults.append([])
+        deviationResults.append([])
+        for j in range(2):
+            algorithmsNames[i].append(file.readline())
+            results[i].append([(float(x) - optimal[i]) / optimal[i] for x in file.readline().split()])
+            bestResults[i].append([(float(x) - optimal[i]) / optimal[i] for x in file.readline().split()])
+            times[i].append(float(file.readline()))
+        
+        
+            #oblicza srednia i odchylenie z rozwiazan
+            mean = sum(results[i][j]) / 10
+            deviation = 0
+            for x in results[i][j]:
+                deviation += (x - mean) * (x - mean)
+            deviationResults[i].append(m.sqrt(deviation / 10))
+            meanResults[i].append(mean)
+    
+    file.close()
+    
+    dataHBest = []
+    dataHMean = []
+    dataHDeviation = []
+    dataHTimes = []
+    for i in range(2):
+        dataHBest.append([])
+        dataHMean.append([])
+        dataHDeviation.append([])
+        dataHTimes.append([])
+        for j in range(len(bestResults)):
+            dataHBest[i].append(bestResults[j][i][-1])
+            dataHMean[i].append(meanResults[j][i])
+            dataHDeviation[i].append(deviationResults[j][i])
+            dataHTimes[i].append(times[j][i])
+    
+    plt.figure()
+    for i in range(2):
+        plt.plot(dataHBest[i], 'o', label = algorithmsNames[0][i][:-1] + '-H start') 
+    for i in range(2):
+        plt.plot(dataBest[i], 'o', label = algorithmsNames[0][i][:-1] + '-R start')
+    plt.title('Best results')
+    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.xlabel('instance')
+    plt.ylabel('solution quality')
+    plt.xticks(range(instanceNo), instanceNames)
+    plt.yscale('log')
+    plt.savefig('charts/Hbest.pdf', bbox_inches='tight')
+    
+    plt.figure()
+    x = [i for i in range(instanceNo)]
+    for i in range(2):
+        plt.errorbar(x, dataHMean[i], yerr=dataHDeviation[i], fmt='o', label = algorithmsNames[0][i][:-1] + '-H start')
+    for i in range(2):
+        plt.errorbar(x, dataMean[i], yerr=dataDeviation[i], fmt='o', label = algorithmsNames[0][i][:-1] + '-R start') 
+    plt.xticks(range(instanceNo), instanceNames)
+    plt.title('Mean results')
+    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.xlabel('instance')
+    plt.ylabel('solution quality')
+    plt.yscale('log')
+    plt.savefig('charts/Hmean.pdf', bbox_inches='tight')
+    
+    plt.figure()
+    for i in range(2):
+        plt.plot(dataHTimes[i], 'o', label = algorithmsNames[0][i][:-1] + '-H start') 
+    for i in range(2):
+        plt.plot(dataTimes[i], 'o', label = algorithmsNames[0][i][:-1] + '-R start') 
+    plt.title('Mean time of 1 run')
+    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.xlabel('instance')
+    #plt.ylabel('solution quality')
+    plt.xticks(range(instanceNo), instanceNames)
+    plt.yscale('log')
+    plt.savefig('charts/Htime.pdf', bbox_inches='tight')
 
-optimal = result2()
+    
+
+optimal, dataBest, dataMean, dataDeviation, dataTimes = result2()
 #result3(optimal)
 #result4(optimal)
-result5(optimal)
+#result5(optimal)
+startH(optimal, dataBest, dataMean, dataDeviation, dataTimes)
