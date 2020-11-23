@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import math as m
+import statistics
 
 def result2():
     file = open("results2.txt", "r")
@@ -194,6 +195,27 @@ def result3(optimal):
             line = file.readline().split()
             startSolutionS[i].append((float(line[0]) - optimal[i]) / optimal[i])
             finishSolutionS[i].append((float(line[1]) - optimal[i]) / optimal[i])
+    file.close()
+    
+    file = open("correlation.txt", "w")
+    corS = []
+    corG = []
+    for i in range(instanceNo):
+        pomS = []
+        pomG = []
+        for j in range(len(startSolutionS[i])):
+            pomS.append(startSolutionS[i][j] * finishSolutionS[i][j])
+            pomG.append(startSolutionG[i][j] * finishSolutionG[i][j])
+        covS = (sum(pomS) - sum(startSolutionS[i]) * sum(finishSolutionS[i]) / len(pomS)) / len(pomS)
+        covG = (sum(pomG) - sum(startSolutionG[i]) * sum(finishSolutionG[i]) / len(pomG)) / len(pomG)
+        corS.append(covS / (statistics.stdev(startSolutionS[i]) - statistics.stdev(finishSolutionS[0])))
+        corG.append(covG / (statistics.stdev(startSolutionG[i]) - statistics.stdev(finishSolutionG[0])))
+    file.write('instancja G S \n')
+    for i in range(instanceNo):
+        file.write(instanceNames[i] + ' ' + str(corG[i]) + ' ' + str(corS[i]) + '\n')
+    print(instanceNames)
+    print(corS)
+    print(corG)
     file.close()
     
     for i in range(instanceNo):
@@ -524,7 +546,7 @@ def compareSwap(optimal, dataBest, dataMean, dataDeviation, dataTimes):
 
 optimal, dataBest, dataMean, dataDeviation, dataTimes = result2()
 result3(optimal)
-result4(optimal)
-result5(optimal)
-startH(optimal, dataBest, dataMean, dataDeviation, dataTimes)
-compareSwap(optimal, dataBest, dataMean, dataDeviation, dataTimes)
+#result4(optimal)
+#result5(optimal)
+#startH(optimal, dataBest, dataMean, dataDeviation, dataTimes)
+#compareSwap(optimal, dataBest, dataMean, dataDeviation, dataTimes)
