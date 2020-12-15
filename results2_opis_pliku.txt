@@ -4,7 +4,6 @@ wartoœæ optimum
 nazwa algorytmu 
 10 wartoœci: œrednie rozwi¹zanie
 10 wartoœci: najlepsze rozwi¹zanie
-10 wartoœci: najgorsze rozwi¹zanie
 10 wartoœci: liczba przejrzanych rozwi¹zañ
 10 wartoœci: liczba kroków (wa¿ne tylko dla G i S)
 œredni czas 1 uruchomienia algorytmu

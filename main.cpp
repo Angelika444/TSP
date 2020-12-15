@@ -29,7 +29,7 @@ struct algorithmResult {
     //liczba krokow - dla greedy i steepest
     int steps = 0;
     //liczba przejrzanych rozwiazan
-    int solutionNo = 0;
+    long long int solutionNo = 0;
     //aktualny sumaryczny dystans
     double actual;
     int iterations = 0;
@@ -40,7 +40,7 @@ struct algorithmResult {
     double firstWorstResults[10];
     double first10Results[10];
     int firstSteps[10] = {0};
-    int firstSolutionNo[10];
+    long long int firstSolutionNo[10];
     double startSolution[iterations_p3];
     double finishSolution[iterations_p3];
     double bestSolution[iterations_p4];
@@ -202,10 +202,10 @@ double calcDistDif(int solution[], int i, int j, int dim, double** distanceMatri
     else
     {
         sol_diff = 0;
-        sol_diff -= getDistance(solution[j], solution[j-1], distanceMatrix);
-        sol_diff += getDistance(solution[i], solution[j-1], distanceMatrix);
-        sol_diff -= getDistance(solution[i], solution[i+1], distanceMatrix);
-        sol_diff += getDistance(solution[j], solution[i+1], distanceMatrix);
+        //sol_diff -= getDistance(solution[j], solution[j-1], distanceMatrix);
+        //sol_diff += getDistance(solution[i], solution[j-1], distanceMatrix);
+        //sol_diff -= getDistance(solution[i], solution[i+1], distanceMatrix);
+        //sol_diff += getDistance(solution[j], solution[i+1], distanceMatrix);
     }
 
     return sol_diff;
@@ -285,14 +285,14 @@ double calcDistDifSwap(int solution[], int i, int j, int dim, double** distanceM
 void swapElements(int i, int j, int dim, int solution[])
 {
     //jesli i=0, j=dim-1, to zamieniamy je miejscami, bo odwrocenie wszystkich elementow pomiedzy nimi daloby dokladnie to samo sasiedztwo
-    if (i == 0 && j == dim - 1) swap(solution[i], solution[j]);
-    else
-    {
+    //if (i == 0 && j == dim - 1) swap(solution[i], solution[j]);
+    //else
+    //{
        for (int k = 0; k < ceil(double(j + i) / 2) - i; k++)
         {
             swap(solution[i + k], solution[j - k]);
         }
-    }
+    //}
 }
 
 void greedySwap(int dim, int solution[], double** distanceMatrix, algorithmResult &result, time_t time_start, int algorithmTime)
@@ -341,7 +341,7 @@ void greedySwap(int dim, int solution[], double** distanceMatrix, algorithmResul
     if (result.iterations < 10)
     {
         result.firstBestResults[result.iterations] = result.best;
-        result.firstWorstResults[result.iterations] = result.worst;
+        //result.firstWorstResults[result.iterations] = result.worst;
         result.first10Results[result.iterations] = result.actual;
         result.firstSteps[result.iterations] = steps;
         result.firstSolutionNo[result.iterations] = counter;
@@ -368,7 +368,6 @@ void steepestSwap(point tab[], int dim, int solution[], double** distanceMatrix,
         counter += numIterations;
         best_diff = 0.0;
         //generuj po kolei elementy sasiedztwa
-        // zewnetrzna petla musi byc do dim-1, a wewnetrzna do dim, inaczej nie bedziemy miec nigdy pary 0, dim-1, jak w greedy
         for(int i = 0; i < dim - 1; i++)
         {
             for(int j = i+1; j < dim; j++)
@@ -410,7 +409,7 @@ void steepestSwap(point tab[], int dim, int solution[], double** distanceMatrix,
     if (result.iterations < 10)
     {
         result.firstBestResults[result.iterations] = result.best;
-        result.firstWorstResults[result.iterations] = result.worst;
+        //result.firstWorstResults[result.iterations] = result.worst;
         result.first10Results[result.iterations] = result.actual;
         result.firstSteps[result.iterations] = steps;
         result.firstSolutionNo[result.iterations] = counter;
@@ -419,6 +418,174 @@ void steepestSwap(point tab[], int dim, int solution[], double** distanceMatrix,
     if (result.iterations < iterations_p4) result.bestSolution[result.iterations] = result.best;
     if (result.iterations < iterations_p4) result.meanSolution[result.iterations] = result.sum / (result.iterations + 1);
 
+}
+
+void tabuSearch(point tab[], int dim, int solution[], double** distanceMatrix, algorithmResult &result, time_t time_start, int algorithmTime)
+{
+    //tabu search
+    //rozmiary zgodne z tym, co jest na stronie
+    int tabuListSize = int (dim / 4), masterListSize = int (dim / 10);
+    //pomocnicze struktury danych
+    //do masterList, masterListIndex zapisujemy roznice w rozwiazaniach i odpowiadajacy indeks zamiany
+    //potem wybieramy masterListSize najlepszych rozwiazan i je przerzucamy do masterlistChosen i masterListIndexChosen
+    int tabuList[tabuListSize][2], tabuListIndex = 0, i, j, ii, s, best_index, getBest = 0;
+    vector <double> masterList, masterListChosen;
+    vector <int> masterListIndexI, masterListIndexJ, masterListIndexIChosen, masterListIndexJChosen;
+    double bestRejected, worstElem, actualBest = result.actual;
+    bool tabu;
+    //limit okresla ile iteracji wykonujemy bez poprawy najlepszego rozwiazania, dla >1000 jest 100, bo to i tak dlugo dziala
+    int limit = 300;
+    if (dim > 1000) limit = 100;
+    else if (dim <= 100) limit = 500;
+
+    //liczba przejrzanych rozwiazan przy przeskaniu wszystkich par i,j
+    int numIterations = dim * (dim - 1) / 2 + 1;
+    double best_diff = 0.0;
+    double sol_diff = 0.0;
+    int best_i = 0, best_j = 0, last_i = -1, last_j = -1;
+
+    do
+    {
+        masterList.clear();
+        masterListChosen.clear();
+        masterListIndexI.clear();
+        masterListIndexJ.clear();
+        masterListIndexIChosen.clear();
+        masterListIndexJChosen.clear();
+        //generuj po kolei elementy sasiedztwa
+        //tak jak dla steepest
+        for(i = 0; i < dim - 1; i++)
+        {
+            for(j = i+1; j < dim; j++)
+            {
+                tabu = false;
+                sol_diff = calcDistDif(solution, i, j, dim, distanceMatrix);
+                //przy zamianie elementow
+                //sol_diff = calcDistDifSwap(solution, i, j, dim, distanceMatrix);
+
+                //jesli rozwiazanie jest lepsze od najlepszego, to łamiemy liste tabu
+                if (result.actual + sol_diff < actualBest - 0.000001)
+                {
+                    masterList.push_back(sol_diff);
+                    masterListIndexI.push_back(i);
+                    masterListIndexJ.push_back(j);
+                }
+                else
+                {
+                    //sprawdzamy czy ruch jest zgodny z lista tabu
+                    for(ii = 0; ii < tabuListSize; ii++)
+                    {
+                        if((tabuList[ii][0] == solution[i] && tabuList[ii][1] == solution[j]) || (tabuList[ii][0] == solution[j] && tabuList[ii][1] == solution[i])) tabu = true;
+                    }
+                    //jesli zamiana jest zgodna z tabu
+                    //i mamy mniej elementów na liscie master niz jest wymagane lub rozwiazanie jest lepsze od najgorszego z tabu (zeby nie wpisywac wszystkich rozwiazan na liste tabu)
+                    if (!tabu && (masterList.size() < masterListSize || sol_diff < worstElem))
+                    {
+                        masterList.push_back(sol_diff);
+                        masterListIndexI.push_back(i);
+                        masterListIndexJ.push_back(j);
+                        if (sol_diff > worstElem) worstElem = sol_diff;
+                    }
+                }
+            }
+        }
+
+        //masterListSize najlepszych rozwiazan przepisujemy na liste masterListChosen
+        for (j = 0; j < min (masterListSize, int(masterList.size())); j++)
+        {
+            best_diff = masterList[0];
+            best_index = 0;
+            for (i = 1; i < masterList.size(); i++)
+            {
+                if (masterList[i] < best_diff)
+                {
+                    best_diff = masterList[i];
+                    best_index = i;
+                }
+            }
+            masterListChosen.push_back(best_diff);
+            masterListIndexIChosen.push_back(masterListIndexI[best_index]);
+            masterListIndexJChosen.push_back(masterListIndexJ[best_index]);
+
+            masterList.erase(masterList.begin() + best_index);
+            masterListIndexI.erase(masterListIndexI.begin() + best_index);
+            masterListIndexJ.erase(masterListIndexJ.begin() + best_index);
+        }
+
+        //bestRejected - najlepsze rozwiazanie, ktorego nie wybralismy
+        if (masterList.size() > 0)
+        {
+            bestRejected = masterList[0];
+            for (i = 1; i < masterList.size(); i++)
+            {
+                if (masterList[i] < bestRejected) bestRejected = masterList[i];
+            }
+        }
+        else bestRejected = 100000000;
+
+        for (j = 0; j < int(masterListChosen.size()); j++)
+        {
+            best_i = masterListIndexIChosen[j];
+            best_j = masterListIndexJChosen[j];
+
+            //sprawdzamy, czy nie bylo zamiany w stylu (0, 10) a teraz jest (11, dim-1), bo wtedy dostalibysmy oryginalny uklad miast, przez co mozna by sie zapetlic
+            if ((best_i == 0 && last_j == dim - 1 && last_i - best_j == 1) || (last_i == 0 && best_j == dim - 1 && best_i - last_j == 1));
+            else
+            {
+                //liczymy jeszcze raz roznice, bo po pierwszej zamianie mogla zmienic sie wartosc rozwiazania dla innych par wierzcholkow z listy master
+                best_diff = calcDistDif(solution, best_i, best_j, dim, distanceMatrix);
+
+                //jezeli rozwiazanie jest gorsze od najlepszego odrzuconego, to wychodzimy z petli - tworzymy ponownie masterList
+                if (best_diff > bestRejected) j = int(masterListChosen.size());
+                //w przeciwnym wypadku zamieniamy wierzcholki
+                else
+                {
+                    //odwrocenie luku - trzeba odwrocic wszyskie elementy pomiedzy i a j,
+                    swapElements(best_i, best_j, dim, solution);
+                    //przy zamianie par - w elementach nieobowiazkowych jest, zeby porownac te 2 sasiedztwa
+                    //swap(solution[best_i], solution[best_j]);
+
+                    //na liste tabu wpisujemy pare wierzcholkow, ktorych nie mozna zamieniac
+                    //z listy tabu znikaja najstarsze elementy
+                    tabuList[tabuListIndex][0] = solution[best_i];
+                    tabuList[tabuListIndex][1] = solution[best_j];
+                    tabuListIndex++;
+                    if (tabuListIndex == tabuListSize) tabuListIndex = 0;
+
+                    //aktualizujemy obecny wynik funcji celu
+                    result.actual += best_diff;
+                    //liczymy ile iteracji mija od ostatniego polepszenia wyniku
+                    //actualBest jest najlepszym wynikiem osiagnietym podczas tego uruchomienia algorytmu
+                    getBest++;
+                    if (result.actual < actualBest - 0.000001)
+                    {
+                        //cout<<getBest<<" "<<actualBest<<endl;
+                        actualBest = result.actual;
+                        getBest = 0;
+                    }
+
+                    //if j==0, to znaczy ze przejrzelismy numIterations (tyle co w steepest)
+                    // else przejrzelismy 1, bo ponownie musielismy obliczyc rozwiazanie
+                    if (j == 0) actualizeResult(result, dim, solution, numIterations, 1);
+                    else actualizeResult(result, dim, solution, 1, 1);
+
+                    last_i = best_i;
+                    last_j = best_j;
+                }
+            }
+        }
+    }
+    //jak rozwiazanie nie poprawi sie przez limit iteracji, to przerywamy algorytm
+    while (getBest < limit);
+
+    if (result.iterations < 10)
+    {
+        result.firstBestResults[result.iterations] = result.best;
+        //nie zapisujemy najgorsze rozwiązania, bo to trzeba zrobic inaczej dla tabu, a to nie jest obowiązkowe
+        //result.firstWorstResults[result.iterations] = result.worst;
+        result.first10Results[result.iterations] = actualBest;
+        result.firstSolutionNo[result.iterations] = result.solutionNo;
+    }
 }
 
 void randomWalkSwap(point tab[], int dim, int solution[], double** distanceMatrix, algorithmResult &result, double algorithmTime)
@@ -459,7 +626,7 @@ void randomWalkSwap(point tab[], int dim, int solution[], double** distanceMatri
     if (result.iterations < 10)
     {
         result.firstBestResults[result.iterations] = result.best;
-        result.firstWorstResults[result.iterations] = result.worst;
+        //result.firstWorstResults[result.iterations] = result.worst;
         //jako rozwiazanie z iteracji zapisywana jest srednia rozwiazan z tej iteracji
         result.first10Results[result.iterations] = result.sum / result.steps;
         result.firstSolutionNo[result.iterations] = counter + 1;
@@ -556,7 +723,7 @@ int main()
         int solutionGS[2][100][dim];
 
         //przechowuje info o najlepszych, najgorszych rozw. itp.
-        algorithmResult results[5];
+        algorithmResult results[6];
 
         //kazdy algorytm ma swoja petle, bo kazdy ma dzialac tyle samo czasu
         //RW, G, S - algorytm jest puszczany z losowa poczatkowa permutacja, wykonuje sie okreslona liczbe razy (RW) albo poki nie dojdzie do optimum (G, S)
@@ -606,6 +773,22 @@ int main()
         results[4].time = current_time / double(results[4].iterations);
         results[4].iterationTime = current_time / double(results[4].iterations);
 
+        //tabusearch - 5
+        time_start = clock();
+        randomSolution(dim, solution);
+        initResult(results[5], dim, solution, distanceMatrix, "TS");
+        do
+        {
+            tabuSearch(tab, dim, solution, distanceMatrix, results[5], time_start, algorithmTime);
+            randomSolution(dim, solution);
+            results[5].actual = calcSolutionDistance(dim, solution, distanceMatrix);
+
+            results[5].iterations++;
+            current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
+        } while (current_time < algorithmTime || results[5].iterations < 10);
+        results[5].time = current_time / double(results[5].iterations);
+        results[5].iterationTime = current_time / double(results[5].iterations);
+
         double iteration_time = results[3].time * 0.8;
         time_t innerLoopTime;
         //H heuristics - 0
@@ -630,7 +813,7 @@ int main()
             if (results[0].iterations < 10)
             {
                 results[0].firstBestResults[results[0].iterations] = results[0].best;
-                results[0].firstWorstResults[results[0].iterations] = results[0].worst;
+                //results[0].firstWorstResults[results[0].iterations] = results[0].worst;
                 //jako rozwiazanie z iteracji zapisywana jest srednia rozwiazan z tej iteracji
                 results[0].first10Results[results[0].iterations] = results[0].sum / results[0].steps;
                 results[0].firstSolutionNo[results[0].iterations] = results[0].steps;
@@ -652,7 +835,7 @@ int main()
         results[1].actual = distance;
         results[1].solutionNo++;
         results[1].steps++;
-        results[1].worst = distance;
+        //results[1].worst = distance;
         do
         {
             innerLoopTime = clock();
@@ -667,7 +850,7 @@ int main()
             if (results[1].iterations < 10)
             {
                 results[1].firstBestResults[results[1].iterations] = results[1].best;
-                results[1].firstWorstResults[results[1].iterations] = results[1].worst;
+                //results[1].firstWorstResults[results[1].iterations] = results[1].worst;
                 //jako rozwiazanie z iteracji zapisywana jest srednia rozwiazan z tej iteracji
                 results[1].first10Results[results[1].iterations] = results[1].sum / results[1].steps;
                 results[1].firstSolutionNo[results[1].iterations] = results[1].steps;
@@ -697,13 +880,14 @@ int main()
         results[2].iterationTime = current_time / double(results[2].iterations);
 
         //wyswietlenie statystyk
-        for (i = 0; i < 5; i++)
+        for (i = 0; i < 6; i++)
         {
             cout << results[i].name << ": ";
             cout << "best: " << results[i].best << ", ";
-            cout << "worst: " << results[i].worst << ", ";
+            cout << "best opt: " << optimal[k] / results[i].best<< ", ";
+            //cout << "worst: " << results[i].worst << ", ";
             //W G i S liczony jest tylko koncowy wynik dla kazdej iteracji, w pozostalych algorytmach - kazady posredni wynik
-            if (i == 3 || i == 4) cout << "mean: " << results[i].sum / double(results[i].iterations) << ", ";
+            if (i >= 3) cout << "mean: " << results[i].sum / double(results[i].iterations) << ", ";
             else cout << "mean: " << results[i].sum / double(results[i].solutionNo) << ", ";
             cout << "iterations: " << results[i].iterations << ", ";
             //cout << "steps: " << results[i].steps << ", ";
@@ -713,7 +897,7 @@ int main()
         }
 
         //zapis do pliku punkt 2:
-        for (i = 0; i < 5; i++)
+        for (i = 0; i < 6; i++)
         {
             //zapis nazwy algorytmu
             output << results[i].name << endl;
@@ -730,12 +914,13 @@ int main()
             }
             output << endl;
             //zapis najgorszych rozwiazan
+            //nie zapisujemy ich
             //dla G i S jest to najgorsze rozwiazanie dla ktorego algorytm sie zakonczyl, nie bierze sie pod uwage rozwiazan posrednich
-            for (j = 0; j < 10; j++)
+            /*for (j = 0; j < 10; j++)
             {
                 output << results[i].firstWorstResults[j] << " ";
             }
-            output << endl;
+            output << endl;*/
             //zapis liczby przejrzanych rozwiązań
             for (j = 0; j < 10; j++)
             {

@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import math as m
 import statistics
 
+algorithNo = 6
+
 def result2():
     file = open("results2.txt", "r")
     instanceNo = int(file.readline())
@@ -10,7 +12,7 @@ def result2():
     algorithmsNames = []
     results = []
     bestResults = []
-    worstResults = []
+    #worstResults = []
     meanResults = []
     deviationResults = []
     solutionNo = []
@@ -23,18 +25,18 @@ def result2():
         algorithmsNames.append([])
         results.append([])
         bestResults.append([])
-        worstResults.append([])
+        #worstResults.append([])
         solutionNo.append([])
         steps.append([])
         times.append([])
         iterationTimes.append([])
         meanResults.append([])
         deviationResults.append([])
-        for j in range(5):
+        for j in range(algorithNo):
             algorithmsNames[i].append(file.readline())
             results[i].append([(float(x) - optimal[i]) / optimal[i] for x in file.readline().split()])
             bestResults[i].append([(float(x) - optimal[i]) / optimal[i] for x in file.readline().split()])
-            worstResults[i].append([(float(x) - optimal[i]) / optimal[i] for x in file.readline().split()])
+            #worstResults[i].append([(float(x) - optimal[i]) / optimal[i] for x in file.readline().split()])
             solutionNo[i].append(sum([int(x) for x in file.readline().split()]) / 10)
             steps[i].append(sum([int(x) for x in file.readline().split()]) / 10)
             times[i].append(float(file.readline()))
@@ -53,17 +55,17 @@ def result2():
     
     dataBest = []
     dataMean = []
-    dataWorst = []
+    #dataWorst = []
     dataDeviation = []
     dataSolutionNo = []
     dataSteps = []
     dataTimes = []
     dataIterationTimes = []
-    for i in range(5):
+    for i in range(algorithNo):
         dataBest.append([])
         dataMean.append([])
         dataDeviation.append([])
-        dataWorst.append([])
+        #dataWorst.append([])
         dataSolutionNo.append([])
         dataSteps.append([])
         dataTimes.append([])
@@ -72,15 +74,15 @@ def result2():
             dataBest[i].append(bestResults[j][i][-1])
             dataMean[i].append(meanResults[j][i])
             dataDeviation[i].append(deviationResults[j][i])
-            dataWorst[i].append(worstResults[j][i][-1])
+            #dataWorst[i].append(worstResults[j][i][-1])
             dataSolutionNo[i].append(solutionNo[j][i])
             dataSteps[i].append(steps[j][i])
             dataTimes[i].append(times[j][i])
             dataIterationTimes[i].append(iterationTimes[j][i])
             
     
-    """plt.figure()
-    for i in range(5):
+    plt.figure()
+    for i in range(algorithNo):
         plt.plot(dataBest[i], 'o', label = algorithmsNames[0][i]) 
     plt.title('Best results')
     plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
@@ -94,7 +96,7 @@ def result2():
 
     plt.figure()
     x = [i for i in range(instanceNo)]
-    for i in range(5):
+    for i in range(algorithNo):
         plt.errorbar(x, dataMean[i], yerr=dataDeviation[i], fmt='o', label = algorithmsNames[0][i]) 
     plt.xticks(range(instanceNo), instanceNames)
     plt.title('Mean results')
@@ -105,8 +107,8 @@ def result2():
     plt.savefig('charts/2mean.pdf', bbox_inches='tight')
     #plt.show()
     
-    plt.figure()
-    for i in range(5):
+    """plt.figure()
+    for i in range(algorithNo):
         plt.plot(dataWorst[i], 'o', label = algorithmsNames[0][i]) 
     plt.title('Worst results')
     plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
@@ -115,10 +117,10 @@ def result2():
     plt.xticks(range(instanceNo), instanceNames)
     plt.yscale('log')
     plt.savefig('charts/2worst.pdf', bbox_inches='tight')
-    #plt.show()
+    #plt.show()"""
     
     plt.figure()
-    for i in range(5):
+    for i in range(algorithNo):
         plt.plot(dataSolutionNo[i], 'o', label = algorithmsNames[0][i]) 
     plt.title('Solution number')
     plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
@@ -142,7 +144,7 @@ def result2():
     #plt.show()
     
     plt.figure()
-    for i in range(5):
+    for i in range(algorithNo):
         plt.plot(dataTimes[i], 'o', label = algorithmsNames[0][i]) 
     plt.title('Mean time of 1 run')
     plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
@@ -154,7 +156,7 @@ def result2():
     #plt.show()
     
     plt.figure()
-    for i in range(5):
+    for i in range(algorithNo):
         plt.plot(dataIterationTimes[i], 'o', label = algorithmsNames[0][i]) 
     plt.title('Mean iteration time')
     plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
@@ -163,7 +165,7 @@ def result2():
     plt.xticks(range(instanceNo), instanceNames)
     plt.yscale('log')
     plt.savefig('charts/2iterationTime.pdf', bbox_inches='tight')
-    #plt.show()"""
+    #plt.show()
     
     return optimal, dataBest, dataMean, dataDeviation, dataTimes
     
@@ -551,4 +553,4 @@ optimal, dataBest, dataMean, dataDeviation, dataTimes = result2()
 #result4(optimal)
 #result5(optimal)
 #startH(optimal, dataBest, dataMean, dataDeviation, dataTimes)
-compareSwap(optimal, dataBest, dataMean, dataDeviation, dataTimes)
+#compareSwap(optimal, dataBest, dataMean, dataDeviation, dataTimes)
