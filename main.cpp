@@ -635,6 +635,138 @@ void randomWalkSwap(point tab[], int dim, int solution[], double** distanceMatri
     }
 }
 
+double temp(double prev_temp, double alfa)
+{
+    return alfa * prev_temp;
+}
+
+void SimulatedAnnealing(point tab[], int dim, int solution[], double** distanceMatrix, algorithmResult &result, time_t time_start, int algorithmTime)
+{
+    //deklarujemy hiperparametry
+
+    //temperatura startowa taka, żeby akceptowane było 95% ruchów.
+    //liczę to tak szacując, żę 1/2 rozwiązań jest lepsza a 1/2 rozwiązań jest gorsza
+    //lepsze 0.5 będzie zawsze akceptowane
+    //0.9 z pozostałych 0.5 też będzie zawsze akceptowane, czyli na początku wartość funkcji temperatury musi wynosić 0.9 (dobrze???)
+    double c_start = 0.9;
+    //długość łańcucha Markowa L (liczba iteracji na jednym poziomie temp.) proporcjonalna do średniego rozmiaru sąsiedztwa (chodzi o to, by dać szanse odwiedzenia każdego sąsiada), a zatem zwykle zależna od rozmiaru instancji
+    int instance_size = sizeof(solution)/sizeof(solution[0]);
+    int L = instance_size * instance_size * 2;
+    //funkcja dekrementacji temperatury – c(k+1) = alfa * c(k), 0.8 < alfa <0.99, niech alfa = 0.9
+    //zdefiniowana wyżej - tutaj ustalam współczynnik alfa
+    double alfa = 0.9;
+    //warunek stopu (2 warunki):
+    //brak poprawy po P*L iteracjach (np. P=10)
+    int P = 10;
+    //temperatura spada do poziomu na którym prawdopodobieństwo akceptacji ruchów pogarszających jest bliskie zeru, np. 0.01.
+    double min_probability = 0.01;
+
+    //inne potrzebne zmienne
+    double c = c_start;
+    double prob, random_number;
+    int currentL = 0;
+    int currentP = 0;
+    int noIterationsNoImprovement = 0;
+    bool noImprovement = false;
+
+
+
+    //zaczynamy jak greedy
+    time_t current_time;
+    int counter = 1, steps = 0;
+    if (result.iterations < iterations_p3) result.startSolution[result.iterations] = result.actual;
+    do
+    {
+        //generuj po kolei elementy sasiedztwa
+        //zewnetrzna petla musi byc do dim-1, a wewnetrzna do dim, inaczej nie bedziemy miec nigdy pary 0, dim-1
+        for(int i = 0; i < dim - 1; i++)
+        {
+            for(int j = i+1; j < dim; j++)
+            {
+                counter++;
+                double sol_diff = calcDistDif(solution, i, j, dim, distanceMatrix);
+                //przy zamianie elementow
+                //double sol_diff = calcDistDifSwap(solution, i, j, dim, distanceMatrix);
+
+                //jesli uzyskalismy poprawe, to nalezy dokonac zamiany od razu tak samo jak w greedy
+                if (sol_diff < 0)
+                {
+                    //odwrocenie luku - trzeba odwrocic wszyskie elementy pomiedzy i a j
+                    swapElements(i, j, dim, solution);
+                    //przy zamianie par - w elementach nieobowiazkowych jest, zeby porownac te 2 sasiedztwa
+                    //swap(solution[i], solution[j]);
+
+                    steps++;
+                    //aktualizujemy aktualna dlugosc sciezki, zeby potem nie trzeba jej bylo ponownie obliczac
+                    result.actual += sol_diff;
+                    i = dim;
+                    break;
+                }
+                else    //jesli nie uzyskalismy poprawy to z pewnym prawdopodobienstwem i tak dokonujemy zamiany
+                {
+                    //licze prawdopodobienstwo zamiany na podstawie roznicy w jakosci oraz temperatury c
+                    prob = exp(-abs(sol_diff)/c);
+                    //losuje liczbe od 0 do 1
+                    random_number = ((double) rand() / (RAND_MAX));
+                    //jezeli losowanie zadziałało robie zamiane
+                    if(prob > random_number)
+                    {
+                        //resetuje liczbe iteracji bez poprawy
+                        noIterationsNoImprovement = 0;
+
+                        //robie wszystko to samo co w zamianie greedy:
+                        //odwrocenie luku - trzeba odwrocic wszyskie elementy pomiedzy i a j
+                        swapElements(i, j, dim, solution);
+                        //przy zamianie par - w elementach nieobowiazkowych jest, zeby porownac te 2 sasiedztwa
+                        //swap(solution[i], solution[j]);
+
+                        steps++;
+                        //aktualizujemy aktualna dlugosc sciezki, zeby potem nie trzeba jej bylo ponownie obliczac
+                        result.actual += sol_diff;
+                        i = dim;
+                        break;
+                    }
+                    else //jesli nie bylo poprawy
+                    {
+                        //zwiekszam liczbe iteracji bez porpawy
+                        noIterationsNoImprovement++;
+                    }
+                }
+                //niezaleznie od tego co sie wydarzylo trzeba zmienic stan parametrow
+                //zmniejszenie temperatury co L iteracji
+                currentL++;
+                if (currentL == L)
+                {
+                    c = temp(c, alfa);
+                }
+                //przerwanie algorytmu po P * L iteracjach bez poprawy
+                if (noIterationsNoImprovement >= currentL * P)
+                {
+                    noImprovement = true;
+                    i = dim;
+                    break;
+                }
+            }
+        }
+        current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
+    } while (/*current_time < algorithmTime && */!noImprovement && c >= min_probability);
+
+    //wynik koncowy jest najlepszym dotychczasowym, dlatego aktualizujemy go na koncu
+    actualizeResult(result, dim, solution, counter, steps);
+    if (result.iterations < 10)
+    {
+        result.firstBestResults[result.iterations] = result.best;
+        //result.firstWorstResults[result.iterations] = result.worst;
+        result.first10Results[result.iterations] = result.actual;
+        result.firstSteps[result.iterations] = steps;
+        result.firstSolutionNo[result.iterations] = counter;
+    }
+    if (result.iterations < iterations_p3) result.finishSolution[result.iterations] = result.actual;
+    if (result.iterations < iterations_p4) result.bestSolution[result.iterations] = result.best;
+    if (result.iterations < iterations_p4) result.meanSolution[result.iterations] = result.sum / (result.iterations + 1);
+}
+
+
 
 int main()
 {
@@ -723,7 +855,7 @@ int main()
         int solutionGS[2][100][dim];
 
         //przechowuje info o najlepszych, najgorszych rozw. itp.
-        algorithmResult results[6];
+        algorithmResult results[7];
 
         //kazdy algorytm ma swoja petle, bo kazdy ma dzialac tyle samo czasu
         //RW, G, S - algorytm jest puszczany z losowa poczatkowa permutacja, wykonuje sie okreslona liczbe razy (RW) albo poki nie dojdzie do optimum (G, S)
@@ -826,6 +958,74 @@ int main()
         results[0].time = current_time / double(results[0].solutionNo);
         results[0].iterationTime = current_time / double(results[0].iterations);
 
+        //Simulated Annealing - 6
+        time_start = clock();
+        randomSolution(dim, solution);
+        initResult(results[6], dim, solution, distanceMatrix, "SA");
+        do
+        {
+            SimulatedAnnealing(tab, dim, solution, distanceMatrix, results[6], time_start, algorithmTime);
+            randomSolution(dim, solution);
+            results[6].actual = calcSolutionDistance(dim, solution, distanceMatrix);
+            /*
+            if (results[6].iterations < iterations_p5)
+            {
+                for(i=0; i<dim; i++) solutionGS[2][results[6].iterations][i] = solution[i];
+            }
+            */
+
+
+            if (results[6].iterations < 10)
+            {
+                results[6].firstBestResults[results[1].iterations] = results[1].best;
+                //results[1].firstWorstResults[results[1].iterations] = results[1].worst;
+                //jako rozwiazanie z iteracji zapisywana jest srednia rozwiazan z tej iteracji
+                results[6].first10Results[results[1].iterations] = results[1].sum / results[1].steps;
+                results[6].firstSolutionNo[results[1].iterations] = results[1].steps;
+                results[6].sum = 0;
+                results[6].steps = 0;
+            }
+            results[6].iterations ++;
+            current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
+        } while (current_time < algorithmTime || results[6].iterations < 10);
+        results[6].time = current_time / double(results[6].iterations);
+        results[6].iterationTime = current_time / double(results[6].iterations);
+
+
+        //H heuristics - 0
+        time_start = clock();
+        results[0].name = "H";
+        do
+        {
+            innerLoopTime = clock();
+            startCity.clear();
+            //do
+            //{
+                for (i = 0; i < dim; i++) startCity.push_back(i);
+                do
+                {
+                    HSolution(tab, dim, solution, distanceMatrix, startCity, results[0]);
+                    current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
+                    inner_current_time = (clock() - innerLoopTime) / double(CLOCKS_PER_SEC);
+                } while (current_time < algorithmTime && (startCity.size() > 0) && inner_current_time < iteration_time);
+            //} while (inner_current_time < iteration_time);
+
+            if (results[0].iterations < 10)
+            {
+                results[0].firstBestResults[results[0].iterations] = results[0].best;
+                //results[0].firstWorstResults[results[0].iterations] = results[0].worst;
+                //jako rozwiazanie z iteracji zapisywana jest srednia rozwiazan z tej iteracji
+                results[0].first10Results[results[0].iterations] = results[0].sum / results[0].steps;
+                results[0].firstSolutionNo[results[0].iterations] = results[0].steps;
+                results[0].sum = 0;
+                results[0].steps = 0;
+            }
+            results[0].iterations ++;
+            current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
+        } while (current_time < algorithmTime || results[0].iterations < 10);
+        results[0].time = current_time / double(results[0].solutionNo);
+        results[0].iterationTime = current_time / double(results[0].iterations);
+
         //random - 1
         time_start = clock();
         randomSolution(dim, solution);
@@ -880,7 +1080,7 @@ int main()
         results[2].iterationTime = current_time / double(results[2].iterations);
 
         //wyswietlenie statystyk
-        for (i = 0; i < 6; i++)
+        for (i = 0; i < 7; i++)
         {
             cout << results[i].name << ": ";
             cout << "best: " << results[i].best << ", ";
@@ -897,7 +1097,7 @@ int main()
         }
 
         //zapis do pliku punkt 2:
-        for (i = 0; i < 6; i++)
+        for (i = 0; i < 7; i++)
         {
             //zapis nazwy algorytmu
             output << results[i].name << endl;

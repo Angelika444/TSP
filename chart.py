@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import math as m
 import statistics
 
-algorithNo = 6
+algorithNo = 7
 
 def result2():
     file = open("results2.txt", "r")
