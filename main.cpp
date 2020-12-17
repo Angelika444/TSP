@@ -665,7 +665,6 @@ void SimulatedAnnealing(point tab[], int dim, int solution[], double** distanceM
     double c = c_start;
     double prob, random_number;
     int currentL = 0;
-    int currentP = 0;
     int noIterationsNoImprovement = 0;
     bool noImprovement = false;
 
@@ -733,14 +732,15 @@ void SimulatedAnnealing(point tab[], int dim, int solution[], double** distanceM
                     }
                 }
                 //niezaleznie od tego co sie wydarzylo trzeba zmienic stan parametrow
-                //zmniejszenie temperatury co L iteracji
+                //zmniejszenie temperatury co L iteracji i reset wartośc currentL
                 currentL++;
                 if (currentL == L)
                 {
                     c = temp(c, alfa);
+                    currentL = 0;
                 }
                 //przerwanie algorytmu po P * L iteracjach bez poprawy
-                if (noIterationsNoImprovement >= currentL * P)
+                if (noIterationsNoImprovement >= L * P)
                 {
                     noImprovement = true;
                     i = dim;
