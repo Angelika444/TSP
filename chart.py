@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
 import math as m
+import numpy as np
 import statistics
 
-algorithNo = 7
-
 def result2():
+    algorithNo = 7
     file = open("results2.txt", "r")
     instanceNo = int(file.readline())
     instanceNames = []
@@ -79,9 +79,84 @@ def result2():
             dataSteps[i].append(steps[j][i])
             dataTimes[i].append(times[j][i])
             dataIterationTimes[i].append(iterationTimes[j][i])
-            
+        
+    x_label = np.arange(instanceNo)  * 2
+    width = 0.7 * 2
+    plt.figure()
+    for i in range(algorithNo):
+        plt.bar(x_label-0.6+0.2*i, dataBest[i], width/7, label=algorithmsNames[0][i])
+    plt.title('Best results')
+    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.xlabel('instance')
+    plt.ylabel('solution quality')
+    plt.xticks(x_label, instanceNames)
+    plt.yscale('log')
+    plt.tight_layout()
+    plt.savefig('charts/2best.pdf', bbox_inches='tight')
+    #plt.show()
     
     plt.figure()
+    x = [i for i in range(instanceNo)]
+    for i in range(algorithNo):
+        plt.bar(x_label-0.6+0.2*i, dataMean[i], width/7, yerr=dataDeviation[i], label = algorithmsNames[0][i], error_kw=dict(lw=1, capsize=1, capthick=1)) 
+    plt.xticks(x_label, instanceNames)
+    plt.title('Mean results')
+    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.xlabel('instance')
+    plt.ylabel('solution quality')
+    plt.yscale('log')
+    plt.savefig('charts/2mean.pdf', bbox_inches='tight')
+    #plt.show()
+    
+    plt.figure()
+    for i in range(algorithNo):
+        plt.bar(x_label-0.6+0.2*i, dataSolutionNo[i], width/7, label=algorithmsNames[0][i])
+    plt.title('Solution number')
+    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.xlabel('instance')
+    #plt.ylabel('solution quality')
+    plt.xticks(x_label, instanceNames)
+    plt.yscale('log')
+    plt.savefig('charts/2solutionNo.pdf', bbox_inches='tight')
+    #plt.show()
+    
+    plt.figure()
+    for i in range(3, 5):
+        plt.bar(x_label-0.6+0.2*i, dataSteps[i], width/7, label=algorithmsNames[0][i])
+    plt.title('Number of steps')
+    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.xlabel('instance')
+    #plt.ylabel('solution quality')
+    plt.xticks(x_label, instanceNames)
+    plt.yscale('log')
+    plt.savefig('charts/2steps.pdf', bbox_inches='tight')
+    #plt.show()
+    
+    plt.figure()
+    for i in range(algorithNo):
+        plt.bar(x_label-0.6+0.2*i, dataTimes[i], width/7, label=algorithmsNames[0][i])
+    plt.title('Mean time of 1 run')
+    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.xlabel('instance')
+    #plt.ylabel('solution quality')
+    plt.xticks(x_label, instanceNames)
+    plt.yscale('log')
+    plt.savefig('charts/2time.pdf', bbox_inches='tight')
+    #plt.show()
+    
+    plt.figure()
+    for i in range(algorithNo):
+        plt.bar(x_label-0.6+0.2*i, dataIterationTimes[i], width/7, label=algorithmsNames[0][i])
+    plt.title('Mean iteration time')
+    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.xlabel('instance')
+    #plt.ylabel('solution quality')
+    plt.xticks(x_label, instanceNames)
+    plt.yscale('log')
+    plt.savefig('charts/2iterationTime.pdf', bbox_inches='tight')
+    #plt.show()
+    
+    """plt.figure()
     for i in range(algorithNo):
         plt.plot(dataBest[i], 'o', label = algorithmsNames[0][i]) 
     plt.title('Best results')
@@ -91,8 +166,7 @@ def result2():
     plt.xticks(range(instanceNo), instanceNames)
     plt.yscale('log')
     plt.savefig('charts/2best.pdf', bbox_inches='tight')
-    #plt.show()
-    
+    #plt.show() 
 
     plt.figure()
     x = [i for i in range(instanceNo)]
@@ -106,18 +180,6 @@ def result2():
     plt.yscale('log')
     plt.savefig('charts/2mean.pdf', bbox_inches='tight')
     #plt.show()
-    
-    """plt.figure()
-    for i in range(algorithNo):
-        plt.plot(dataWorst[i], 'o', label = algorithmsNames[0][i]) 
-    plt.title('Worst results')
-    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
-    plt.xlabel('instance')
-    plt.ylabel('solution quality')
-    plt.xticks(range(instanceNo), instanceNames)
-    plt.yscale('log')
-    plt.savefig('charts/2worst.pdf', bbox_inches='tight')
-    #plt.show()"""
     
     plt.figure()
     for i in range(algorithNo):
@@ -165,7 +227,19 @@ def result2():
     plt.xticks(range(instanceNo), instanceNames)
     plt.yscale('log')
     plt.savefig('charts/2iterationTime.pdf', bbox_inches='tight')
-    #plt.show()
+    #plt.show()"""
+    
+    """plt.figure()
+    for i in range(algorithNo):
+        plt.plot(dataWorst[i], 'o', label = algorithmsNames[0][i]) 
+    plt.title('Worst results')
+    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.xlabel('instance')
+    plt.ylabel('solution quality')
+    plt.xticks(range(instanceNo), instanceNames)
+    plt.yscale('log')
+    plt.savefig('charts/2worst.pdf', bbox_inches='tight')
+    #plt.show()"""
     
     return optimal, dataBest, dataMean, dataDeviation, dataTimes
     
@@ -365,7 +439,8 @@ def result5(optimal):
         plt.savefig('charts/5' + instanceNames[i] + '.pdf', bbox_inches='tight')
         
 def startH(optimal, dataBest, dataMean, dataDeviation, dataTimes):
-    print(dataDeviation)
+    algorithNo = 4
+    #print(dataDeviation)
     file = open("resultsH.txt", "r")
     instanceNo = int(file.readline())
     instanceNames = []
@@ -383,7 +458,7 @@ def startH(optimal, dataBest, dataMean, dataDeviation, dataTimes):
         times.append([])
         meanResults.append([])
         deviationResults.append([])
-        for j in range(2):
+        for j in range(algorithNo):
             algorithmsNames[i].append(file.readline())
             results[i].append([(float(x) - optimal[i]) / optimal[i] for x in file.readline().split()])
             bestResults[i].append([(float(x) - optimal[i]) / optimal[i] for x in file.readline().split()])
@@ -404,7 +479,7 @@ def startH(optimal, dataBest, dataMean, dataDeviation, dataTimes):
     dataHMean = []
     dataHDeviation = []
     dataHTimes = []
-    for i in range(2):
+    for i in range(algorithNo):
         dataHBest.append([])
         dataHMean.append([])
         dataHDeviation.append([])
@@ -415,11 +490,53 @@ def startH(optimal, dataBest, dataMean, dataDeviation, dataTimes):
             dataHDeviation[i].append(deviationResults[j][i])
             dataHTimes[i].append(times[j][i])
     
-    print(dataHDeviation)
+    #print(dataHDeviation)
+    x_label = np.arange(instanceNo)
+    width = 0.8
     plt.figure()
-    for i in range(2):
+    for i in range(algorithNo):
+        plt.bar(x_label-0.35+0.1*i, dataHBest[i], width/8, label=algorithmsNames[0][i][:-1] + '-H start')
+    for i in range(algorithNo):
+        plt.bar(x_label+0.05+0.1*i, dataBest[i + 3], width/8, label=algorithmsNames[0][i][:-1] + '-R start')
+    plt.title('Best results')
+    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.xlabel('instance')
+    plt.ylabel('solution quality')
+    plt.xticks(x_label, instanceNames)
+    #plt.yscale('log')
+    plt.savefig('charts/Hbest.pdf', bbox_inches='tight')
+    
+    plt.figure()
+    x = [i for i in range(instanceNo)]
+    for i in range(algorithNo):
+        plt.bar(x_label-0.35+0.1*i, dataHMean[i], width/8, yerr=dataHDeviation[i], label = algorithmsNames[0][i][:-1] + '-H start', error_kw=dict(lw=1, capsize=1, capthick=1)) 
+    for i in range(algorithNo):
+        plt.bar(x_label+0.05+0.1*i, dataMean[i + 3], width/8, yerr=dataDeviation[i + 3], label = algorithmsNames[0][i][:-1] + '-R start', error_kw=dict(lw=1, capsize=1, capthick=1))
+    plt.xticks(range(instanceNo), instanceNames)
+    plt.title('Mean results')
+    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.xlabel('instance')
+    plt.ylabel('solution quality')
+    #plt.yscale('log')
+    plt.savefig('charts/Hmean.pdf', bbox_inches='tight')
+    
+    plt.figure()
+    for i in range(algorithNo):
+        plt.bar(x_label-0.35+0.1*i, dataHTimes[i], width/8, label=algorithmsNames[0][i][:-1] + '-H start')
+    for i in range(algorithNo):
+        plt.bar(x_label+0.05+0.1*i, dataTimes[i + 3], width/8, label=algorithmsNames[0][i][:-1] + '-R start')
+    plt.title('Mean time of 1 run')
+    plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.xlabel('instance')
+    #plt.ylabel('solution quality')
+    plt.xticks(range(instanceNo), instanceNames)
+    plt.yscale('log')
+    plt.savefig('charts/Htime.pdf', bbox_inches='tight')
+    
+    """plt.figure()
+    for i in range(algorithNo):
         plt.plot(dataHBest[i], 'o', label = algorithmsNames[0][i][:-1] + '-H start') 
-    for i in range(2):
+    for i in range(algorithNo):
         plt.plot(dataBest[i + 3], 'o', label = algorithmsNames[0][i][:-1] + '-R start')
     plt.title('Best results')
     plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
@@ -431,9 +548,9 @@ def startH(optimal, dataBest, dataMean, dataDeviation, dataTimes):
     
     plt.figure()
     x = [i for i in range(instanceNo)]
-    for i in range(2):
+    for i in range(algorithNo):
         plt.errorbar(x, dataHMean[i], yerr=dataHDeviation[i], fmt='o', label = algorithmsNames[0][i][:-1] + '-H start')
-    for i in range(2):
+    for i in range(algorithNo):
         plt.errorbar(x, dataMean[i + 3], yerr=dataDeviation[i + 3], fmt='o', label = algorithmsNames[0][i][:-1] + '-R start') 
     plt.xticks(range(instanceNo), instanceNames)
     plt.title('Mean results')
@@ -444,9 +561,9 @@ def startH(optimal, dataBest, dataMean, dataDeviation, dataTimes):
     plt.savefig('charts/Hmean.pdf', bbox_inches='tight')
     
     plt.figure()
-    for i in range(2):
+    for i in range(algorithNo):
         plt.plot(dataHTimes[i], 'o', label = algorithmsNames[0][i][:-1] + '-H start') 
-    for i in range(2):
+    for i in range(algorithNo):
         plt.plot(dataTimes[i + 3], 'o', label = algorithmsNames[0][i][:-1] + '-R start') 
     plt.title('Mean time of 1 run')
     plt.legend(prop={'size': 10}, loc='center left', bbox_to_anchor=(1, 0.5))
@@ -454,7 +571,7 @@ def startH(optimal, dataBest, dataMean, dataDeviation, dataTimes):
     #plt.ylabel('solution quality')
     plt.xticks(range(instanceNo), instanceNames)
     plt.yscale('log')
-    plt.savefig('charts/Htime.pdf', bbox_inches='tight')
+    plt.savefig('charts/Htime.pdf', bbox_inches='tight')"""
 
 
 def compareSwap(optimal, dataBest, dataMean, dataDeviation, dataTimes):
@@ -552,5 +669,5 @@ optimal, dataBest, dataMean, dataDeviation, dataTimes = result2()
 #result3(optimal)
 #result4(optimal)
 #result5(optimal)
-#startH(optimal, dataBest, dataMean, dataDeviation, dataTimes)
+startH(optimal, dataBest, dataMean, dataDeviation, dataTimes)
 #compareSwap(optimal, dataBest, dataMean, dataDeviation, dataTimes)

@@ -80,8 +80,9 @@ double calcDistance(point p1, point p2)
     return sqrt(x1 * x1 + x2 * x2);
 }
 
-int** createDistanceMatrix(int dim, double** matrix, point tab[])
+double createDistanceMatrix(int dim, double** matrix, point tab[])
 {
+    double mini = 1000000000000;
     for(int i = 0; i<dim-1; i++)
     {
         matrix[i][i] = 0;
@@ -89,8 +90,10 @@ int** createDistanceMatrix(int dim, double** matrix, point tab[])
         {
             matrix[i][j] = calcDistance(tab[i], tab[j]);
             matrix[j][i] = matrix[i][j];
+            if (mini > matrix[i][j]) mini = matrix[i][j];
         }
     }
+    return mini;
 }
 
 double calcSolutionDistance(int dim, int solution[], double** distanceMatrix)
@@ -312,17 +315,17 @@ void greedySwap(int dim, int solution[], double** distanceMatrix, algorithmResul
             for(int j = i+1; j < dim; j++)
             {
                 counter++;
-                double sol_diff = calcDistDif(solution, i, j, dim, distanceMatrix);
+                //double sol_diff = calcDistDif(solution, i, j, dim, distanceMatrix);
                 //przy zamianie elementow
-                //double sol_diff = calcDistDifSwap(solution, i, j, dim, distanceMatrix);
+                double sol_diff = calcDistDifSwap(solution, i, j, dim, distanceMatrix);
 
                 //jesli uzyskalismy poprawe, to nalezy dokonac zamiany od razu
                 if (sol_diff < 0)
                 {
                     //odwrocenie luku - trzeba odwrocic wszyskie elementy pomiedzy i a j
-                    swapElements(i, j, dim, solution);
+                    //swapElements(i, j, dim, solution);
                     //przy zamianie par - w elementach nieobowiazkowych jest, zeby porownac te 2 sasiedztwa
-                    //swap(solution[i], solution[j]);
+                    swap(solution[i], solution[j]);
 
                     swaped = true;
                     steps++;
@@ -372,9 +375,9 @@ void steepestSwap(point tab[], int dim, int solution[], double** distanceMatrix,
         {
             for(int j = i+1; j < dim; j++)
             {
-                double sol_diff = calcDistDif(solution, i, j, dim, distanceMatrix);
+                //double sol_diff = calcDistDif(solution, i, j, dim, distanceMatrix);
                 //przy zamianie elementow
-                //double sol_diff = calcDistDifSwap(solution, i, j, dim, distanceMatrix);
+                double sol_diff = calcDistDifSwap(solution, i, j, dim, distanceMatrix);
 
                 //jesli uzyskalismy poprawe, to nalezy zapisac jej wartosc do porownania z innymi
                 if(sol_diff < best_diff)
@@ -389,9 +392,9 @@ void steepestSwap(point tab[], int dim, int solution[], double** distanceMatrix,
         if(best_diff < 0)   //zabezpieczam sie przed wywaleniem algorytmu, jezeli bylibysmy ju¿ w optimum, i nie ma lepszego rozwiazania
         {
             //odwrocenie luku - trzeba odwrocic wszyskie elementy pomiedzy i a j,
-            swapElements(best_i, best_j, dim, solution);
+            //swapElements(best_i, best_j, dim, solution);
             //przy zamianie par - w elementach nieobowiazkowych jest, zeby porownac te 2 sasiedztwa
-            //swap(solution[best_i], solution[best_j]);
+            swap(solution[best_i], solution[best_j]);
 
             steps++;
             result.actual += best_diff;
@@ -459,9 +462,9 @@ void tabuSearch(point tab[], int dim, int solution[], double** distanceMatrix, a
             for(j = i+1; j < dim; j++)
             {
                 tabu = false;
-                sol_diff = calcDistDif(solution, i, j, dim, distanceMatrix);
+                //sol_diff = calcDistDif(solution, i, j, dim, distanceMatrix);
                 //przy zamianie elementow
-                //sol_diff = calcDistDifSwap(solution, i, j, dim, distanceMatrix);
+                sol_diff = calcDistDifSwap(solution, i, j, dim, distanceMatrix);
 
                 //jesli rozwiazanie jest lepsze od najlepszego, to łamiemy liste tabu
                 if (result.actual + sol_diff < actualBest - 0.000001)
@@ -533,7 +536,9 @@ void tabuSearch(point tab[], int dim, int solution[], double** distanceMatrix, a
             else
             {
                 //liczymy jeszcze raz roznice, bo po pierwszej zamianie mogla zmienic sie wartosc rozwiazania dla innych par wierzcholkow z listy master
-                best_diff = calcDistDif(solution, best_i, best_j, dim, distanceMatrix);
+                //best_diff = calcDistDif(solution, best_i, best_j, dim, distanceMatrix);
+                //przy zamianie elementow
+                best_diff = calcDistDifSwap(solution, i, j, dim, distanceMatrix);
 
                 //jezeli rozwiazanie jest gorsze od najlepszego odrzuconego, to wychodzimy z petli - tworzymy ponownie masterList
                 if (best_diff > bestRejected) j = int(masterListChosen.size());
@@ -541,9 +546,9 @@ void tabuSearch(point tab[], int dim, int solution[], double** distanceMatrix, a
                 else
                 {
                     //odwrocenie luku - trzeba odwrocic wszyskie elementy pomiedzy i a j,
-                    swapElements(best_i, best_j, dim, solution);
+                    //swapElements(best_i, best_j, dim, solution);
                     //przy zamianie par - w elementach nieobowiazkowych jest, zeby porownac te 2 sasiedztwa
-                    //swap(solution[best_i], solution[best_j]);
+                    swap(solution[best_i], solution[best_j]);
 
                     //na liste tabu wpisujemy pare wierzcholkow, ktorych nie mozna zamieniac
                     //z listy tabu znikaja najstarsze elementy
@@ -640,7 +645,7 @@ double temp(double prev_temp, double alfa)
     return alfa * prev_temp;
 }
 
-void SimulatedAnnealing(point tab[], int dim, int solution[], double** distanceMatrix, algorithmResult &result, time_t time_start, int algorithmTime)
+void SimulatedAnnealing(point tab[], int dim, int solution[], double** distanceMatrix, algorithmResult &result, time_t time_start, int algorithmTime, double min_diff)
 {
     //deklarujemy hiperparametry
 
@@ -654,12 +659,12 @@ void SimulatedAnnealing(point tab[], int dim, int solution[], double** distanceM
     int L = dim * dim * 2;
     //funkcja dekrementacji temperatury – c(k+1) = alfa * c(k), 0.8 < alfa <0.99, niech alfa = 0.9
     //zdefiniowana wyżej - tutaj ustalam współczynnik alfa
-    double alfa = 0.9;
+    double alfa = 0.95;
     //warunek stopu (2 warunki):
     //brak poprawy po P*L iteracjach (np. P=10)
-    int P = 100;
+    int P = 10;
     //temperatura spada do poziomu na którym prawdopodobieństwo akceptacji ruchów pogarszających jest bliskie zeru, np. 0.01.
-    double min_probability = 0.01;
+    double min_probability = 0.001;
 
     //inne potrzebne zmienne
     double c = c_start;
@@ -673,74 +678,60 @@ void SimulatedAnnealing(point tab[], int dim, int solution[], double** distanceM
 
     //zaczynamy jak greedy
     time_t current_time;
-    int counter = 1, steps = 0;
+    int counter = 1;
     do
     {
         //generuj po kolei elementy sasiedztwa
-        //zewnetrzna petla musi byc do dim-1, a wewnetrzna do dim, inaczej nie bedziemy miec nigdy pary 0, dim-1
         for(int i = 0; i < dim - 1; i++)
         {
             for(int j = i+1; j < dim; j++)
             {
                 counter++;
-                double sol_diff = calcDistDif(solution, i, j, dim, distanceMatrix);
+                //double sol_diff = calcDistDif(solution, i, j, dim, distanceMatrix);
                 //przy zamianie elementow
-                //double sol_diff = calcDistDifSwap(solution, i, j, dim, distanceMatrix);
+                double sol_diff = calcDistDifSwap(solution, i, j, dim, distanceMatrix);
 
                 //jesli uzyskalismy poprawe, to nalezy dokonac zamiany od razu tak samo jak w greedy
                 if (sol_diff < 0)
                 {
                     //odwrocenie luku - trzeba odwrocic wszyskie elementy pomiedzy i a j
-                    swapElements(i, j, dim, solution);
+                    //swapElements(i, j, dim, solution);
                     //przy zamianie par - w elementach nieobowiazkowych jest, zeby porownac te 2 sasiedztwa
-                    //swap(solution[i], solution[j]);
+                    swap(solution[i], solution[j]);
 
-                    steps++;
                     //aktualizujemy aktualna dlugosc sciezki, zeby potem nie trzeba jej bylo ponownie obliczac
                     result.actual += sol_diff;
-                    actualizeResult(result, dim, solution, 1, 1);
-                    if (result.actual < actualBest)
-                    {
-                        actualBest = result.actual;
-                    }
-                    i = dim;
-                    j = dim;
+                    actualizeResult(result, dim, solution, counter, 1);
+                    counter = 0;
+                    //zapamietujemy najlepszy wynik  witeracji, bo niekoniecznie konczymy w optimum
+                    if (result.actual < actualBest) actualBest = result.actual;
+                    noIterationsNoImprovement = 0;
+
                 }
                 else    //jesli nie uzyskalismy poprawy to z pewnym prawdopodobienstwem i tak dokonujemy zamiany
                 {
                     //licze prawdopodobienstwo zamiany na podstawie roznicy w jakosci oraz temperatury c
-                    prob = exp(-abs(sol_diff)/c);
+                    prob = exp(-(sol_diff/min_diff)/c);
                     //losuje liczbe od 0 do 1
                     random_number = ((double) rand() / (RAND_MAX));
                     //jezeli losowanie zadziałało robie zamiane
                     if(prob > random_number)
                     {
-                        //resetuje liczbe iteracji bez poprawy
-                        noIterationsNoImprovement = 0;
-
                         //robie wszystko to samo co w zamianie greedy:
                         //odwrocenie luku - trzeba odwrocic wszyskie elementy pomiedzy i a j
-                        swapElements(i, j, dim, solution);
+                        //swapElements(i, j, dim, solution);
                         //przy zamianie par - w elementach nieobowiazkowych jest, zeby porownac te 2 sasiedztwa
-                        //swap(solution[i], solution[j]);
+                        swap(solution[i], solution[j]);
 
-                        steps++;
                         //aktualizujemy aktualna dlugosc sciezki, zeby potem nie trzeba jej bylo ponownie obliczac
                         result.actual += sol_diff;
-                        actualizeResult(result, dim, solution, 1, 1);
-                        if (result.actual < actualBest)
-                        {
-                            actualBest = result.actual;
-                        }
-                        i = dim;
-                        j = dim;
+                        actualizeResult(result, dim, solution, counter, 1);
+                        counter = 0;
                     }
-                    else //jesli nie bylo poprawy
-                    {
-                        //zwiekszam liczbe iteracji bez porpawy
-                        noIterationsNoImprovement++;
-                    }
+                    //zwiekszam liczbe iteracji bez porpawy (nawet jesli zamieniamy, to dostajemy rozwiazanie gorsze)
+                    noIterationsNoImprovement++;
                 }
+
                 //niezaleznie od tego co sie wydarzylo trzeba zmienic stan parametrow
                 //zmniejszenie temperatury co L iteracji i reset wartośc currentL
                 currentL++;
@@ -761,6 +752,9 @@ void SimulatedAnnealing(point tab[], int dim, int solution[], double** distanceM
         current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
     } while (/*current_time < algorithmTime && */!noImprovement && c >= min_probability);
 
+    //if(noImprovement) cout<<"n"<<endl;
+    //if (c < min_probability) cout<<"c"<<endl;
+
     if (result.iterations < 10)
     {
         result.firstBestResults[result.iterations] = result.best;
@@ -768,6 +762,7 @@ void SimulatedAnnealing(point tab[], int dim, int solution[], double** distanceM
         result.first10Results[result.iterations] = actualBest;
         result.firstSolutionNo[result.iterations] = result.solutionNo;
     }
+    //cout<<result.best<<endl;
 }
 
 
@@ -855,7 +850,8 @@ int main()
             solution[i] = i;
         }
 
-        createDistanceMatrix(dim, distanceMatrix, tab);
+        double min_diff;
+        min_diff = createDistanceMatrix(dim, distanceMatrix, tab);
         int solutionGS[2][100][dim];
 
         //przechowuje info o najlepszych, najgorszych rozw. itp.
@@ -866,11 +862,12 @@ int main()
         //potem jest puszczany ponownie z inna permutacja az nie skonczy sie czas
         //H losuje poczatkowe miasto - zrobione, zeby za kazdym razem bylo ono inne (dzieki startCity)
         //jesli skonstruuje rozwiazanie dla wszystkich mozliwych miast poczatkowych, to algorytm jest powtarzany, aby zmierzyc czas
-        int algorithmTime = 1, iterationNo = 1;
+        int algorithmTime = 10, iterationNo = 10;
 
 
+        time_t time_start;
         //greedy - 3
-        time_t time_start = clock();
+        time_start = clock();
         randomSolution(dim, solution);
         initResult(results[3], dim, solution, distanceMatrix, "G");
         do
@@ -934,7 +931,7 @@ int main()
         initResult(results[6], dim, solution, distanceMatrix, "SA");
         do
         {
-            SimulatedAnnealing(tab, dim, solution, distanceMatrix, results[6], time_start, algorithmTime);
+            SimulatedAnnealing(tab, dim, solution, distanceMatrix, results[6], time_start, algorithmTime, min_diff);
             randomSolution(dim, solution);
             results[6].actual = calcSolutionDistance(dim, solution, distanceMatrix);
 
@@ -979,6 +976,7 @@ int main()
         } while (current_time < algorithmTime || results[0].iterations < iterationNo);
         results[0].time = current_time / double(results[0].solutionNo);
         results[0].iterationTime = current_time / double(results[0].iterations);
+
         //random - 1
         time_start = clock();
         randomSolution(dim, solution);
@@ -1066,14 +1064,6 @@ int main()
                 output << results[i].firstBestResults[j] << " ";
             }
             output << endl;
-            //zapis najgorszych rozwiazan
-            //nie zapisujemy ich
-            //dla G i S jest to najgorsze rozwiazanie dla ktorego algorytm sie zakonczyl, nie bierze sie pod uwage rozwiazan posrednich
-            /*for (j = 0; j < 10; j++)
-            {
-                output << results[i].firstWorstResults[j] << " ";
-            }
-            output << endl;*/
             //zapis liczby przejrzanych rozwiązań
             for (j = 0; j < 10; j++)
             {
@@ -1153,10 +1143,6 @@ int main()
             for (i = 0; i < dim; i++) startCity.push_back(i);
             HSolution(tab, dim, solution, distanceMatrix, startCity, results[0]);
             results[3].actual = calcSolutionDistance(dim, solution, distanceMatrix);
-            if (results[3].iterations < iterations_p5)
-            {
-                for(i=0; i<dim; i++) solutionGS[0][results[3].iterations][i] = solution[i];
-            }
 
             results[3].iterations++;
             current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
@@ -1175,10 +1161,6 @@ int main()
             for (i = 0; i < dim; i++) startCity.push_back(i);
             HSolution(tab, dim, solution, distanceMatrix, startCity, results[0]);
             results[4].actual = calcSolutionDistance(dim, solution, distanceMatrix);
-            if (results[4].iterations < iterations_p5)
-            {
-                for(i=0; i<dim; i++) solutionGS[1][results[4].iterations][i] = solution[i];
-            }
 
             results[4].iterations++;
             current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
@@ -1186,7 +1168,46 @@ int main()
         results[4].time = current_time / double(results[4].iterations);
         results[4].iterationTime = current_time / double(results[4].iterations);
 
-        for (i = 3; i < 5; i++)
+        //tabusearch - 5
+        time_start = clock();
+        HSolution(tab, dim, solution, distanceMatrix, startCity, results[0]);
+        initResult(results[5], dim, solution, distanceMatrix, "TS");
+        do
+        {
+            tabuSearch(tab, dim, solution, distanceMatrix, results[5], time_start, algorithmTime);
+            startCity.clear();
+            for (i = 0; i < dim; i++) startCity.push_back(i);
+            HSolution(tab, dim, solution, distanceMatrix, startCity, results[0]);
+            results[5].actual = calcSolutionDistance(dim, solution, distanceMatrix);
+
+            results[5].iterations++;
+            current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
+        } while (current_time < algorithmTime || results[5].iterations < iterationNo);
+        results[5].time = current_time / double(results[5].iterations);
+        results[5].iterationTime = current_time / double(results[5].iterations);
+
+        double iteration_time = results[3].time * 0.8;
+        time_t innerLoopTime;
+
+        //Simulated Annealing - 6
+        time_start = clock();
+        HSolution(tab, dim, solution, distanceMatrix, startCity, results[0]);
+        initResult(results[6], dim, solution, distanceMatrix, "SA");
+        do
+        {
+            SimulatedAnnealing(tab, dim, solution, distanceMatrix, results[6], time_start, algorithmTime, min_diff);
+            startCity.clear();
+            for (i = 0; i < dim; i++) startCity.push_back(i);
+            HSolution(tab, dim, solution, distanceMatrix, startCity, results[0]);
+            results[6].actual = calcSolutionDistance(dim, solution, distanceMatrix);
+
+            results[6].iterations ++;
+            current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
+        } while (current_time < algorithmTime || results[6].iterations < iterationNo);
+        results[6].time = current_time / double(results[6].iterations);
+        results[6].iterationTime = current_time / double(results[6].iterations);
+
+        for (i = 3; i < 7; i++)
         {
             //zapis nazwy algorytmu
             outputH << results[i].name << endl;
@@ -1204,12 +1225,12 @@ int main()
             outputH << endl;
             //zapis sredniego czasu 1 puszczenia algorytmu
             outputH << results[i].time << endl;
-        }*/
-
-
-        //kod tylko dla G i S
+        }
+*/
+/*
+        //kod dla swap vs arc inversion
         //greedy - 3
-        /*time_t time_start = clock();
+        time_t time_start = clock();
         randomSolution(dim, solution);
         initResult(results[3], dim, solution, distanceMatrix, "G");
         do
@@ -1217,10 +1238,6 @@ int main()
             greedySwap(dim, solution, distanceMatrix, results[3], time_start, algorithmTime);
             randomSolution(dim, solution);
             results[3].actual = calcSolutionDistance(dim, solution, distanceMatrix);
-            if (results[3].iterations < iterations_p5)
-            {
-                for(i=0; i<dim; i++) solutionGS[0][results[3].iterations][i] = solution[i];
-            }
 
             results[3].iterations++;
             current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
@@ -1237,10 +1254,6 @@ int main()
             steepestSwap(tab, dim, solution, distanceMatrix, results[4], time_start, algorithmTime);
             randomSolution(dim, solution);
             results[4].actual = calcSolutionDistance(dim, solution, distanceMatrix);
-            if (results[4].iterations < iterations_p5)
-            {
-                for(i=0; i<dim; i++) solutionGS[1][results[4].iterations][i] = solution[i];
-            }
 
             results[4].iterations++;
             current_time = (clock() - time_start) / double(CLOCKS_PER_SEC);
